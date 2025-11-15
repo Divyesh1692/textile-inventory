@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "pages:build": "next build",
+    "cf:build": "npx opennextjs-cloudflare build",
+    "preview": "npm run cf:build && npx opennextjs-cloudflare preview",
+    "deploy": "npm run cf:build && npx opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "next": "16.0.3",
@@ -14,9 +18,11 @@
     "react-dom": "19.2.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.9.1",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "wrangler": "^4.42.0"
   }
 }
