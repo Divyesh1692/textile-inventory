@@ -8,12 +8,12 @@ import DesignPage from "./pages/design/DesignPage";
 import StockPage from "./pages/StockPage";
 import ChallanPage from "./pages/ChallanPage";
 import BillingPage from "./pages/BillingPage";
-
-
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
 
 function App() {
   return (
     <BrowserRouter>
+      <PwaInstallPrompt />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
