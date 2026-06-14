@@ -1,6 +1,7 @@
 import { useState } from "react";
-import Input from "../components/Input";
 import { Link } from "react-router-dom";
+import axios from "../utils/axios";
+import { Lock, User } from "lucide-react";
 
 export default function Login() {
   const [form, setForm] = useState({
@@ -9,6 +10,7 @@ export default function Login() {
   });
 
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -17,71 +19,103 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5050/api/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Login failed");
-        return;
-      }
+      const res = await axios.post("/users/login", form);
+      const data = res.data;
 
       // Save token
       localStorage.setItem("token", data.token);
 
-      alert("Login success!");
       // redirect (e.g., dashboard)
       window.location.href = "/dashboard";
     } catch (err) {
-      setError("Server error");
+      setError(err.response?.data?.message || "Server error");
+      setIsLoading(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4 relative overflow-hidden">
+      {/* Subtle Background Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 p-8 sm:p-10 animate-in fade-in zoom-in-95 duration-500 relative z-10">
+        
+        {/* Brand Header */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg shadow-blue-500/30 mb-4">
+            <span className="text-3xl font-bold tracking-tighter text-white">B</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back</h2>
+          <p className="text-sm text-slate-500 mt-1">Sign in to your BillTex account</p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <Input
-            label="Username"
-            name="username"
-            value={form.username}
-            onChange={handleChange}
-            required
-          />
+        {error && (
+          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium text-center animate-in slide-in-from-top-2">
+            {error}
+          </div>
+        )}
 
-          <Input
-            label="Password"
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">
+              Username
+            </label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <input
+                type="text"
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                required
+                className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                placeholder="Enter your username"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <input
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+            disabled={isLoading}
+            className="w-full relative group mt-2"
           >
-            Login
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition duration-200" />
+            <div className="relative w-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100">
+              {isLoading ? "Signing in..." : "Sign In"}
+            </div>
           </button>
         </form>
 
-        <p className="text-sm text-center mt-4">
-          Don’t have an account?{" "}
-          <Link to="/signup" className="text-blue-600">
-            Signup
-          </Link>
-        </p>
+        <div className="mt-8 text-center">
+          <p className="text-sm text-slate-500">
+            Don't have an account?{" "}
+            <Link to="/signup" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+              Create one now
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
