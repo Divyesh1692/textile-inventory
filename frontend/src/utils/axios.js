@@ -8,7 +8,8 @@ import axios from "axios";
 //
 
 const instance = axios.create({
-  baseURL: "http://localhost:5050/api", // <-- correct port for your backend
+  // baseURL: "http://localhost:5050/api", // <-- correct port for your backend
+  baseURL: "https://billtex.onrender.com/api", // <-- correct port for your backend
 });
 
 instance.interceptors.request.use(
@@ -17,7 +18,7 @@ instance.interceptors.request.use(
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 instance.interceptors.response.use(
@@ -41,7 +42,7 @@ instance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default instance;
