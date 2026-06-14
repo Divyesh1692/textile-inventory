@@ -67,6 +67,7 @@ exports.createBill = async (req, res) => {
       sgst,
       totalAmount,
       date,
+      companyId: req.user.companyId,
     });
 
     const savedBill = await newBill.save();
@@ -98,7 +99,7 @@ exports.updateBill = async (req, res) => {
       challanIds,
     } = req.body;
 
-    const bill = await Bill.findById(id);
+    const bill = await Bill.findOne({ _id: id, companyId: req.user.companyId });
     if (!bill) return res.status(404).json({ message: "Bill not found" });
 
     if (!challanIds || challanIds.length === 0) {
@@ -190,8 +191,8 @@ exports.updateBill = async (req, res) => {
 exports.markBillPrinted = async (req, res) => {
   try {
     const { id } = req.params;
-    const bill = await Bill.findByIdAndUpdate(
-      id,
+    const bill = await Bill.findOneAndUpdate(
+      { _id: id, companyId: req.user.companyId },
       { status: "Printed" },
       { new: true },
     );
@@ -208,8 +209,8 @@ exports.markBillPrinted = async (req, res) => {
 exports.markBillPaid = async (req, res) => {
   try {
     const { id } = req.params;
-    const bill = await Bill.findByIdAndUpdate(
-      id,
+    const bill = await Bill.findOneAndUpdate(
+      { _id: id, companyId: req.user.companyId },
       { status: "Paid" },
       { new: true },
     );
@@ -225,7 +226,7 @@ exports.markBillPaid = async (req, res) => {
 
 exports.getNextBillNumber = async (req, res) => {
   try {
-    const lastBill = await Bill.findOne().sort({ createdAt: -1 });
+    const lastBill = await Bill.findOne({ companyId: req.user.companyId }).sort({ createdAt: -1 });
     let nextNum = 1;
     if (lastBill && lastBill.billNumber) {
       const match = lastBill.billNumber.match(/\d+$/);
@@ -245,7 +246,7 @@ exports.getNextBillNumber = async (req, res) => {
 
 exports.getBills = async (req, res) => {
   try {
-    const bills = await Bill.find()
+    const bills = await Bill.find({ companyId: req.user.companyId })
       .populate("partyId", "name address gst")
       .populate("firmId", "name address gst phone")
       .populate({
@@ -267,7 +268,7 @@ exports.getBills = async (req, res) => {
 
 exports.getBillById = async (req, res) => {
   try {
-    const bill = await Bill.findById(req.params.id)
+    const bill = await Bill.findOne({ _id: req.params.id, companyId: req.user.companyId })
       .populate("partyId", "name address gst")
       .populate("firmId", "name address gst phone")
       .populate({

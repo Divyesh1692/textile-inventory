@@ -655,29 +655,26 @@ export default function ChallanPage() {
                         </span>
                       </td>
                       <td className="py-4 px-6">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setViewChallan(challan)}
-                            title="View"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-medium hover:bg-slate-200 transition-colors"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" /> View
                           </button>
                           {challan.status !== "Billed" && (
                             <button
                               onClick={() => handleOpenEditForm(challan)}
-                              title="Edit"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
                             >
-                              <PencilIcon className="w-4 h-4" />
+                              <PencilIcon className="w-3.5 h-3.5" /> Edit
                             </button>
                           )}
                           <button
                             onClick={() => handlePrint(challan)}
-                            title="Print"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 transition-colors"
                           >
-                            <Printer className="w-4 h-4" />
+                            <Printer className="w-3.5 h-3.5" /> Print
                           </button>
                         </div>
                       </td>

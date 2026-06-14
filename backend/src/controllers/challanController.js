@@ -43,6 +43,7 @@ exports.createChallan = async (req, res) => {
       totalAmount,
       deliveryDate,
       status: "Delivered",
+      companyId: req.user.companyId,
     });
 
     const savedChallan = await newChallan.save();
@@ -60,7 +61,7 @@ exports.updateChallan = async (req, res) => {
     const { id } = req.params;
     const { partyId, firmId, deliveryDate, items } = req.body;
 
-    const challan = await Challan.findById(id);
+    const challan = await Challan.findOne({ _id: id, companyId: req.user.companyId });
     if (!challan) return res.status(404).json({ message: "Challan not found" });
 
     if (challan.status === "Billed") {
@@ -119,7 +120,7 @@ exports.updateChallan = async (req, res) => {
 exports.markChallanPrinted = async (req, res) => {
   try {
     const { id } = req.params;
-    const challan = await Challan.findById(id);
+    const challan = await Challan.findOne({ _id: id, companyId: req.user.companyId });
     if (!challan) return res.status(404).json({ message: "Challan not found" });
 
     // Only mark as Printed if not already Billed
@@ -138,7 +139,7 @@ exports.markChallanPrinted = async (req, res) => {
 
 exports.getNextChallanNumber = async (req, res) => {
   try {
-    const lastChallan = await Challan.findOne().sort({ createdAt: -1 });
+    const lastChallan = await Challan.findOne({ companyId: req.user.companyId }).sort({ createdAt: -1 });
     let nextNum = 1;
     if (lastChallan && lastChallan.challanNumber) {
       const match = lastChallan.challanNumber.match(/\d+$/);
@@ -158,7 +159,7 @@ exports.getNextChallanNumber = async (req, res) => {
 
 exports.getChallans = async (req, res) => {
   try {
-    const challans = await Challan.find()
+    const challans = await Challan.find({ companyId: req.user.companyId })
       .populate("partyId", "name")
       .populate("firmId", "name")
       .populate("items.designId", "name rate photos")
@@ -175,7 +176,7 @@ exports.getChallans = async (req, res) => {
 
 exports.getChallanById = async (req, res) => {
   try {
-    const challan = await Challan.findById(req.params.id)
+    const challan = await Challan.findOne({ _id: req.params.id, companyId: req.user.companyId })
       .populate("partyId", "name")
       .populate("firmId", "name")
       .populate("items.designId", "name rate photos")

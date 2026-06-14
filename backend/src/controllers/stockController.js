@@ -24,6 +24,7 @@ exports.createStock = async (req, res) => {
       qty,
       rate,
       Amount,
+      companyId: req.user.companyId,
     });
 
     await stock.save();
@@ -36,7 +37,7 @@ exports.createStock = async (req, res) => {
 
 exports.getStocks = async (req, res) => {
   try {
-    const stocks = await Stock.find()
+    const stocks = await Stock.find({ companyId: req.user.companyId })
       .populate("designId")
       .populate("firmId")
       .populate("partyId")
@@ -51,7 +52,7 @@ exports.getStocks = async (req, res) => {
 
 exports.updateStock = async (req, res) => {
   try {
-    const stock = await Stock.findByIdAndUpdate(req.params.id, req.body, {
+    const stock = await Stock.findOneAndUpdate({ _id: req.params.id, companyId: req.user.companyId }, req.body, {
       new: true,
     });
 
@@ -66,7 +67,7 @@ exports.updateStock = async (req, res) => {
 
 exports.deleteStock = async (req, res) => {
   try {
-    const stock = await Stock.findByIdAndDelete(req.params.id);
+    const stock = await Stock.findOneAndDelete({ _id: req.params.id, companyId: req.user.companyId });
 
     if (!stock) return res.status(404).json({ message: "Stock not found" });
 

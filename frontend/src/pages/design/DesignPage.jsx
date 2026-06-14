@@ -66,7 +66,7 @@ export default function DesignPage() {
   const deleteDesign = async (id) => {
     if (!window.confirm("Delete this design?")) return;
     try {
-      await axios.delete(`/design/delete/${id}`);
+      await axios.delete(`/design/${id}`);
       fetchDesigns();
     } catch (err) {
       console.error("deleteDesign:", err);

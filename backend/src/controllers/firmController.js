@@ -8,6 +8,7 @@ const createFirm = async (req, res) => {
       name,
       gst,
       address,
+      companyId: req.user.companyId,
     });
 
     await firm.save();
@@ -19,7 +20,7 @@ const createFirm = async (req, res) => {
 
 const getFirms = async (req, res) => {
   try {
-    const firms = await Firm.find();
+    const firms = await Firm.find({ companyId: req.user.companyId });
     res.json(firms);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -30,7 +31,7 @@ const updateFirm = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const firm = await Firm.findOneAndUpdate({ _id: id }, req.body, {
+    const firm = await Firm.findOneAndUpdate({ _id: id, companyId: req.user.companyId }, req.body, {
       new: true,
     });
 
@@ -48,6 +49,7 @@ const deleteFirm = async (req, res) => {
 
     const firm = await Firm.findOneAndDelete({
       _id: id,
+      companyId: req.user.companyId,
     });
 
     if (!firm) return res.status(404).json({ message: "Firm not found" });
