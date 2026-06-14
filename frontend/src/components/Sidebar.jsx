@@ -32,7 +32,9 @@ export default function Sidebar({ isOpen, isMobile, onClose }) {
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-40 flex h-screen flex-col border-r border-slate-800 bg-[#0b1120] text-slate-300 transition-all duration-300 ease-in-out ${
-        isOpen ? "w-64" : "w-20"
+        isMobile 
+          ? (isOpen ? "translate-x-0 w-64 shadow-2xl" : "-translate-x-full w-64")
+          : (isOpen ? "translate-x-0 w-64" : "translate-x-0 w-20")
       }`}
     >
       <div className="flex shrink-0 items-center justify-center h-[72px] border-b border-slate-800/80 px-4 mb-4">
@@ -57,7 +59,9 @@ export default function Sidebar({ isOpen, isMobile, onClose }) {
             <Link
               key={idx}
               to={link.path}
-              onClick={() => { if (isMobile) onClose(); }}
+              onClick={() => {
+                if (isMobile && onClose) onClose();
+              }}
               className={`group flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 isActive
                   ? "bg-slate-800/80 text-white shadow-sm ring-1 ring-slate-700/50"

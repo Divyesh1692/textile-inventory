@@ -9,7 +9,9 @@ export default function DashboardLayout({ children }) {
   // Responsive sidebar
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1024) {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
         setIsOpen(false);
       } else {
         setIsOpen(true);
