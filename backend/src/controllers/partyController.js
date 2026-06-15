@@ -8,7 +8,7 @@ const createParty = async (req, res) => {
       name,
       address,
       gst,
-      companyId: req.user.companyId,
+
     });
 
     await party.save();
@@ -21,7 +21,8 @@ const createParty = async (req, res) => {
 
 const getAllParties = async (req, res) => {
   try {
-    const parties = await Party.find({ companyId: req.user.companyId }).sort({
+    const parties = await Party.find({
+ }).sort({
       createdAt: -1,
     });
     res.json(parties);
@@ -34,7 +35,8 @@ const updateParty = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const party = await Party.findOneAndUpdate({ _id: id, companyId: req.user.companyId }, req.body, {
+    const party = await Party.findOneAndUpdate({ _id: id,
+ }, req.body, {
       new: true,
     });
 
@@ -52,7 +54,7 @@ const deleteParty = async (req, res) => {
 
     const party = await Party.findOneAndDelete({
       _id: id,
-      companyId: req.user.companyId,
+
     });
 
     if (!party) return res.status(404).json({ message: "Party not found" });

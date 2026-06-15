@@ -33,63 +33,293 @@ const statusIcon = (status) => {
 };
 
 // ── Print helpers ─────────────────────────────────────────────────────────────
-const printChallan = (challan) => {
-  const items = challan.items || [];
-  const totalAmt = items.reduce((a, i) => a + i.qty * i.rate, 0);
+const printChallans = (challansArray) => {
+  const pagesHtml = challansArray.map((challan, pIdx) => {
+    const items = challan.items || [];
+    const totalAmt = items.reduce((a, i) => a + i.qty * i.rate, 0);
+
+    const firstStock = items[0]?.stockId || {};
+    const stockDate = firstStock.date ? new Date(firstStock.date).toLocaleDateString("en-IN") : "-";
+    const stockChallanNo = firstStock.challanNo || "-";
+    const deliveryDate = challan.deliveryDate ? new Date(challan.deliveryDate).toLocaleDateString("en-IN") : "-";
+
+    const generateCopy = () => `
+      <div class="challan-copy">
+        <div class="brand-header">
+          <h1 class="title">DELIVERY CHALLAN</h1>
+        </div>
+        
+        <div class="meta-section">
+          <table class="meta-table">
+            <tr>
+              <td><span class="label">Firm:</span> <strong class="value">${challan.firmId?.name || "-"}</strong></td>
+              <td><span class="label">Challan No:</span> <strong class="value">${stockChallanNo}</strong></td>
+              <td><span class="label">Delivery Challan No:</span> <strong class="value">${challan.challanNumber || "-"}</strong></td>
+            </tr>
+            <tr>
+              <td><span class="label">Party:</span> <strong class="value">${challan.partyId?.name || "-"}</strong></td>
+              <td><span class="label">Date:</span> <strong class="value">${stockDate}</strong></td>
+              <td><span class="label">Delivery Date:</span> <strong class="value">${deliveryDate}</strong></td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="table-container">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 5%">#</th>
+                <th style="width: 45%">Design / Item</th>
+                <th style="text-align:right; width: 15%">Rate (₹)</th>
+                <th style="text-align:right; width: 15%">Qty</th>
+                <th style="text-align:right; width: 20%">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items
+                .map(
+                  (item, idx) => `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td><strong>${item.designId?.name || "-"}</strong></td>
+                  <td style="text-align:right">${item.rate.toLocaleString("en-IN")}</td>
+                  <td style="text-align:right">${item.qty}</td>
+                  <td style="text-align:right">${(item.qty * item.rate).toLocaleString("en-IN")}</td>
+                </tr>
+              `
+                )
+                .join("")}
+              <tr class="total-row">
+                <td colspan="3" style="text-align:right"><strong>Total Amount</strong></td>
+                <td style="text-align:right; font-size: 13px;"><strong>${items.reduce((a, i) => a + i.qty, 0)}</strong></td>
+                <td style="text-align:right; font-size: 13px;"><strong>₹${totalAmt.toLocaleString("en-IN")}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="footer">
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <p>Receiver's Signature</p>
+          </div>
+          <div class="signature-box text-right">
+            <div class="signature-line"></div>
+            <p>Authorized Signatory</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Ensure the last page doesn't force a trailing blank page
+    const pageBreakStyle = pIdx === challansArray.length - 1 ? "" : "page-break-after: always;";
+    return `
+      <div class="page-container" style="${pageBreakStyle}">
+        ${generateCopy()}
+        ${generateCopy()}
+        ${generateCopy()}
+      </div>
+    `;
+  }).join('');
+
   const html = `
     <html>
     <head>
-      <title>Challan ${challan.challanNumber}</title>
+    <title>Print Challans</title>
       <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 24px; color: #111; font-size: 13px; }
-        h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-        .sub { color: #555; font-size: 12px; margin-bottom: 20px; }
-        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; background: #f8f8f8; padding: 14px; border-radius: 8px; border: 1px solid #e0e0e0; }
-        .meta p { font-size: 12px; }
-        .meta span { font-weight: 600; display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f0f0f0; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #555; }
-        td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 12px; }
-        .total-row td { font-weight: 700; background: #f8f8f8; border-top: 2px solid #ddd; }
-        .footer { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 12px; font-size: 11px; color: #777; text-align: right; }
+        body { 
+          font-family: 'Inter', Arial, sans-serif; 
+          color: #1e293b; 
+          font-size: 11px; 
+          line-height: 1.4; 
+          background: #fff;
+        }
+        
+        .page-container {
+          width: 100%;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 10px;
+        }
+
+        .challan-copy { 
+          page-break-inside: avoid; 
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          padding: 16px; 
+          margin-bottom: 20px;
+          background: #fff;
+        }
+        
+        .challan-copy:last-child { 
+          margin-bottom: 0;
+        }
+
+        .brand-header {
+          text-align: center;
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .title { 
+          font-size: 15px; 
+          font-weight: 700; 
+          letter-spacing: 1px;
+          color: #0f172a;
+        }
+        
+        .meta-section {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 8px;
+          margin-bottom: 12px;
+        }
+
+        .meta-table {
+          width: 100%;
+          border: none;
+        }
+        
+        .meta-table td {
+          border: none;
+          padding: 4px 8px;
+          vertical-align: top;
+        }
+
+        .label { 
+          color: #64748b;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-right: 4px;
+        }
+
+        .value {
+          color: #0f172a;
+          font-size: 11px;
+        }
+        
+        .table-container {
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          overflow: hidden;
+          margin-bottom: 16px;
+        }
+
+        .items-table { 
+          width: 100%; 
+          border-collapse: collapse; 
+        }
+        
+        .items-table th, .items-table td { 
+          padding: 8px 10px; 
+          border-bottom: 1px solid #e2e8f0;
+          border-right: 1px solid #e2e8f0;
+        }
+
+        .items-table th:last-child, .items-table td:last-child {
+          border-right: none;
+        }
+        
+        .items-table th { 
+          background: #f1f5f9; 
+          text-align: left; 
+          font-weight: 600;
+          color: #475569;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .items-table tbody tr:last-child td {
+          border-bottom: none;
+        }
+
+        .total-row td { 
+          background: #f8fafc; 
+          border-top: 2px solid #cbd5e1 !important;
+          color: #0f172a;
+        }
+        
+        .footer { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: flex-end;
+          padding-top: 10px;
+        }
+
+        .signature-box {
+          width: 150px;
+          text-align: center;
+        }
+
+        .signature-line {
+          border-top: 1px solid #94a3b8;
+          margin-bottom: 6px;
+        }
+
+        .signature-box p {
+          color: #64748b;
+          font-size: 10px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .text-right {
+          text-align: right;
+        }
+        
+        .text-right .signature-line {
+          margin-left: auto;
+        }
+
+        @media print {
+          @page { margin: 10mm; }
+          body, html { padding: 0; margin: 0; height: 100%; background: #fff; font-size: 11px; }
+          .page-container { 
+            padding: 0; 
+            margin: 0; 
+            max-width: 100%; 
+            height: 98vh; /* Almost full page height */
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            gap: 15px;
+          }
+          .challan-copy { 
+            flex: 1; /* Stretch each copy to fill available 1/3 space */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-bottom: 0 !important; 
+            padding: 12px; 
+            border-color: #000; 
+            break-inside: avoid;
+          }
+          .brand-header { margin-bottom: 6px; padding-bottom: 6px; }
+          .title { font-size: 13px; }
+          .meta-section { 
+            padding: 4px; 
+            margin-bottom: 8px; 
+            background: transparent !important; 
+            -webkit-print-color-adjust: exact; 
+          }
+          .meta-table td { padding: 2px 4px; }
+          .table-container { margin-bottom: 8px; flex: 1; } /* Push footer to bottom */
+          .items-table th, .items-table td { padding: 4px 6px; }
+          .footer { padding-top: 6px; margin-top: auto; }
+          .items-table th { background: transparent !important; -webkit-print-color-adjust: exact; }
+        }
       </style>
     </head>
     <body>
-      <h1>Delivery Challan</h1>
-      <p class="sub">Generated on ${new Date().toLocaleDateString("en-IN")}</p>
-      <div class="meta">
-        <div><p>Challan No<span>${challan.challanNumber}</span></p></div>
-        <div><p>Delivery Date<span>${new Date(challan.deliveryDate).toLocaleDateString("en-IN")}</span></p></div>
-        <div><p>Firm<span>${challan.firmId?.name || "-"}</span></p></div>
-        <div><p>Party<span>${challan.partyId?.name || "-"}</span></p></div>
-      </div>
-      <table>
-        <thead>
-          <tr><th>#</th><th>Design / Item</th><th style="text-align:right">Rate (₹)</th><th style="text-align:right">Qty</th><th style="text-align:right">Amount (₹)</th></tr>
-        </thead>
-        <tbody>
-          ${items
-            .map(
-              (item, idx) => `
-            <tr>
-              <td>${idx + 1}</td>
-              <td>${item.designId?.name || "-"}</td>
-              <td style="text-align:right">${item.rate.toLocaleString("en-IN")}</td>
-              <td style="text-align:right">${item.qty}</td>
-              <td style="text-align:right">${(item.qty * item.rate).toLocaleString("en-IN")}</td>
-            </tr>
-          `,
-            )
-            .join("")}
-          <tr class="total-row">
-            <td colspan="3">Total</td>
-            <td style="text-align:right">${items.reduce((a, i) => a + i.qty, 0)}</td>
-            <td style="text-align:right">₹${totalAmt.toLocaleString("en-IN")}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="footer"><p>Status: ${challan.status || "Delivered"}</p></div>
+      ${pagesHtml}
     </body>
     </html>
   `;
@@ -109,6 +339,7 @@ export default function ChallanPage() {
   const [stockList, setStockList] = useState([]);
   const [parties, setParties] = useState([]);
   const [firms, setFirms] = useState([]);
+  const [selectedChallans, setSelectedChallans] = useState([]);
 
   // ── View modal ──
   const [viewChallan, setViewChallan] = useState(null);
@@ -118,13 +349,20 @@ export default function ChallanPage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null); // null = add mode
 
-  const [challanNumber, setChallanNumber] = useState("");
-  const [partyId, setPartyId] = useState("");
-  const [firmId, setFirmId] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
-  const [items, setItems] = useState([]);
+  const defaultDate = new Date().toISOString().split("T")[0];
+  const [items, setItems] = useState([{
+    deliveryDate: defaultDate,
+    challanNumber: "",
+    firmId: "",
+    partyId: "",
+    stockId: "",
+    designId: "",
+    designName: "",
+    stockPhoto: null,
+    qty: "",
+    rate: "",
+    stockSearchText: ""
+  }]);
 
   const [showFilters, setShowFilters] = useState(false);
   const [timeFilter, setTimeFilter] = useState("all");
@@ -145,19 +383,14 @@ export default function ChallanPage() {
     setCurrentPage(1);
   };
 
-  // ── Stock search ──
-  const [stockSearchText, setStockSearchText] = useState("");
-  const [showStockDropdown, setShowStockDropdown] = useState(false);
-  const [selectedStockId, setSelectedStockId] = useState("");
-  const [deliveryQty, setDeliveryQty] = useState("");
-  const [deliveryRate, setDeliveryRate] = useState("");
+  const [activeDropdownIndex, setActiveDropdownIndex] = useState(null);
   const wrapperRef = useRef(null);
 
   // Close dropdown outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setShowStockDropdown(false);
+        setActiveDropdownIndex(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -192,7 +425,13 @@ export default function ChallanPage() {
   const fetchNextChallanNumber = async () => {
     try {
       const res = await axios.get("/challan/get-next-number");
-      setChallanNumber(res.data.nextChallanNumber);
+      setItems(prev => {
+        const newItems = [...prev];
+        if (newItems.length > 0 && !newItems[0].challanNumber) {
+          newItems[0].challanNumber = res.data.nextChallanNumber;
+        }
+        return newItems;
+      });
     } catch (err) {
       console.error("Error fetching next challan number", err);
     }
@@ -201,15 +440,20 @@ export default function ChallanPage() {
   // ── Open add form ──
   const handleOpenAddForm = async () => {
     setEditId(null);
-    setChallanNumber("");
-    setPartyId("");
-    setFirmId("");
-    setDeliveryDate(new Date().toISOString().split("T")[0]);
-    setItems([]);
-    setStockSearchText("");
-    setSelectedStockId("");
-    setDeliveryQty("");
-    setDeliveryRate("");
+    setItems([{
+      deliveryDate: new Date().toISOString().split("T")[0],
+      challanNumber: "",
+      firmId: "",
+      partyId: "",
+      stockId: "",
+      designId: "",
+      designName: "",
+      stockPhoto: null,
+      qty: "",
+      rate: "",
+      stockSearchText: ""
+    }]);
+    setActiveDropdownIndex(null);
     setShowForm(true);
     await fetchNextChallanNumber();
   };
@@ -221,98 +465,107 @@ export default function ChallanPage() {
       return;
     }
     setEditId(challan._id);
-    setChallanNumber(challan.challanNumber);
-    setPartyId(challan.partyId?._id || "");
-    setFirmId(challan.firmId?._id || "");
-    setDeliveryDate(
-      challan.deliveryDate
-        ? challan.deliveryDate.split("T")[0]
-        : new Date().toISOString().split("T")[0],
-    );
-    // Restore items with needed fields
-    setItems(
-      challan.items.map((item) => ({
-        stockId: item.stockId?._id || item.stockId,
-        designId: item.designId?._id || item.designId,
-        designName: item.designId?.name || "Unknown",
-        stockPhoto: item.designId?.photos?.[0] || null,
-        rate: item.rate,
-        qty: item.qty,
-      })),
-    );
-    setStockSearchText("");
-    setSelectedStockId("");
-    setDeliveryQty("");
-    setDeliveryRate("");
+    const item = challan.items?.[0] || {};
+    setItems([{
+      deliveryDate: challan.deliveryDate ? challan.deliveryDate.split("T")[0] : new Date().toISOString().split("T")[0],
+      challanNumber: challan.challanNumber || "",
+      firmId: challan.firmId?._id || challan.firmId || "",
+      partyId: challan.partyId?._id || challan.partyId || "",
+      stockId: item.stockId?._id || item.stockId || "",
+      designId: item.designId?._id || item.designId || "",
+      designName: item.designId?.name || "Unknown",
+      stockPhoto: item.designId?.photos?.[0] || null,
+      rate: item.rate || "",
+      qty: item.qty || "",
+      stockSearchText: `${item.designId?.name || "Stock"} (Qty: ${item.qty})`
+    }]);
+    setActiveDropdownIndex(null);
     setShowForm(true);
   };
 
   // ── Stock selection ──
-  const selectStockItem = (stock) => {
-    setSelectedStockId(stock._id);
-    setStockSearchText(`${stock.designId?.name} (Inward: ${stock.challanNo})`);
-    setShowStockDropdown(false);
-    setDeliveryQty(stock.qty);
-    setDeliveryRate(stock.rate);
-    if (!firmId && stock.firmId) setFirmId(stock.firmId._id);
-    if (!partyId && stock.partyId) setPartyId(stock.partyId._id);
-  };
-
-  const handleAddItem = () => {
-    if (!selectedStockId || !deliveryQty || !deliveryRate) return;
-    const stockInfo = stockList.find((s) => s._id === selectedStockId);
-    if (!stockInfo) return;
-    if (Number(deliveryQty) > stockInfo.qty) {
-      alert(`Cannot deliver more than available stock (${stockInfo.qty})!`);
-      return;
-    }
-    setItems([
-      ...items,
-      {
-        stockId: stockInfo._id,
-        designId: stockInfo.designId._id,
-        designName: stockInfo.designId.name,
-        stockPhoto: stockInfo.designId.photos?.[0] || null,
-        rate: Number(deliveryRate),
-        qty: Number(deliveryQty),
-      },
-    ]);
-    setSelectedStockId("");
-    setStockSearchText("");
-    setDeliveryQty("");
-    setDeliveryRate("");
-  };
-
-  const removeItem = (index) => {
+  const handleItemChange = (index, field, value) => {
     const newItems = [...items];
-    newItems.splice(index, 1);
+    newItems[index][field] = value;
     setItems(newItems);
+  };
+
+  const selectStockItem = (index, stock) => {
+    const newItems = [...items];
+    newItems[index].stockId = stock._id;
+    newItems[index].designId = stock.designId?._id || stock.designId;
+    newItems[index].designName = stock.designId?.name || "Unknown";
+    newItems[index].stockPhoto = stock.designId?.photos?.[0] || null;
+    newItems[index].qty = stock.qty;
+    newItems[index].rate = stock.rate;
+    newItems[index].stockSearchText = `${stock.designId?.name || "Stock"} (Inward: ${stock.challanNo})`;
+    
+    if (!newItems[index].firmId && stock.firmId) newItems[index].firmId = stock.firmId._id || stock.firmId;
+    if (!newItems[index].partyId && stock.partyId) newItems[index].partyId = stock.partyId._id || stock.partyId;
+    
+    setItems(newItems);
+    setActiveDropdownIndex(null);
+  };
+
+  const addChallanRow = () => {
+    const lastItem = items[items.length - 1];
+    setItems([...items, {
+      deliveryDate: lastItem?.deliveryDate || defaultDate,
+      challanNumber: lastItem?.challanNumber ? (parseInt(lastItem.challanNumber) + 1).toString() : "",
+      firmId: lastItem?.firmId || "",
+      partyId: lastItem?.partyId || "",
+      stockId: "",
+      designId: "",
+      designName: "",
+      stockPhoto: null,
+      qty: "",
+      rate: "",
+      stockSearchText: ""
+    }]);
+  };
+
+  const removeChallanRow = (index) => {
+    setItems(items.filter((_, i) => i !== index));
   };
 
   // ── Save (Add or Edit) ──
   const saveChallan = async () => {
-    if (!challanNumber || !partyId || !firmId || items.length === 0) {
-      alert("Please fill all required fields and add at least one item.");
+    const validItems = items.filter(i => i.challanNumber && i.partyId && i.firmId && i.stockId && i.qty);
+    if (validItems.length === 0) {
+      alert("Please ensure all required fields are filled for at least one challan (Challan No, Party, Firm, Stock, Qty).");
       return;
     }
-    try {
-      const payload = {
-        challanNumber,
-        partyId,
-        firmId,
-        deliveryDate,
-        items: items.map((item) => ({
-          stockId: item.stockId,
-          designId: item.designId,
-          qty: item.qty,
-          rate: item.rate,
-        })),
-      };
 
+    try {
       if (editId) {
+        const item = validItems[0];
+        const payload = {
+          challanNumber: item.challanNumber,
+          partyId: item.partyId,
+          firmId: item.firmId,
+          deliveryDate: item.deliveryDate,
+          items: [{
+            stockId: item.stockId,
+            designId: item.designId,
+            qty: Number(item.qty),
+            rate: Number(item.rate),
+          }],
+        };
         await axios.put(`/challan/update/${editId}`, payload);
       } else {
-        await axios.post("/challan/add", payload);
+        const payload = {
+          items: validItems.map(item => ({
+            challanNumber: item.challanNumber,
+            partyId: item.partyId,
+            firmId: item.firmId,
+            deliveryDate: item.deliveryDate,
+            stockId: item.stockId,
+            designId: item.designId,
+            qty: Number(item.qty),
+            rate: Number(item.rate),
+          }))
+        };
+        await axios.post("/challan/bulk", payload);
       }
       await fetchData();
       setShowForm(false);
@@ -327,7 +580,7 @@ export default function ChallanPage() {
 
   // ── Print ──
   const handlePrint = async (challan) => {
-    const win = printChallan(challan);
+    const win = printChallans([challan]);
     // After print dialog, mark as Printed if not already Billed
     win.onafterprint = async () => {
       try {
@@ -337,6 +590,37 @@ export default function ChallanPage() {
         console.error("Error marking challan printed:", err);
       }
     };
+  };
+
+  const handlePrintMultiple = async () => {
+    if (selectedChallans.length === 0) return;
+    const challansToPrint = challanList.filter(c => selectedChallans.includes(c._id));
+    const win = printChallans(challansToPrint);
+    win.onafterprint = async () => {
+      try {
+        await Promise.all(selectedChallans.map(id => axios.patch(`/challan/mark-printed/${id}`)));
+        setSelectedChallans([]);
+        await fetchData();
+      } catch (err) {
+        console.error("Error marking multiple challans printed:", err);
+      }
+    };
+  };
+
+  const toggleSelectAll = (currentItems) => {
+    if (selectedChallans.length === currentItems.length && currentItems.length > 0) {
+      setSelectedChallans([]);
+    } else {
+      setSelectedChallans(currentItems.map((c) => c._id));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    if (selectedChallans.includes(id)) {
+      setSelectedChallans(selectedChallans.filter((cid) => cid !== id));
+    } else {
+      setSelectedChallans([...selectedChallans, id]);
+    }
   };
 
   const filtered = challanList.filter((c) => {
@@ -391,17 +675,6 @@ export default function ChallanPage() {
     currentPage * itemsPerPage,
   );
 
-  const searchedStocks = stockList.filter((s) => {
-    const term = stockSearchText.toLowerCase();
-    return (
-      s.designId?.name?.toLowerCase().includes(term) ||
-      s.challanNo?.toLowerCase().includes(term)
-    );
-  });
-
-  const formTotalQty = items.reduce((a, i) => a + i.qty, 0);
-  const formTotalAmt = items.reduce((a, i) => a + i.qty * i.rate, 0);
-
   // ── Render ──
   return (
     <DashboardLayout>
@@ -417,13 +690,24 @@ export default function ChallanPage() {
               Manage outbound deliveries and challan statuses.
             </p>
           </div>
-          <button
-            onClick={handleOpenAddForm}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 hover:shadow-md transition-all active:scale-95"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Create Challan
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            {selectedChallans.length > 0 && (
+              <button
+                onClick={handlePrintMultiple}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95"
+              >
+                <Printer className="w-5 h-5" />
+                Print Selected ({selectedChallans.length})
+              </button>
+            )}
+            <button
+              onClick={handleOpenAddForm}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 hover:shadow-md transition-all active:scale-95"
+            >
+              <PlusIcon className="w-5 h-5" />
+              Create Challan
+            </button>
+          </div>
         </div>
 
         {/* Data Container */}
@@ -567,6 +851,14 @@ export default function ChallanPage() {
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-100">
+                  <th className="py-4 px-6 text-left">
+                    <input 
+                      type="checkbox"
+                      checked={currentItems.length > 0 && selectedChallans.length === currentItems.length}
+                      onChange={() => toggleSelectAll(currentItems)}
+                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer w-4 h-4"
+                    />
+                  </th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                     Date
                   </th>
@@ -609,6 +901,14 @@ export default function ChallanPage() {
                       key={challan._id}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
+                      <td className="py-4 px-6">
+                        <input
+                          type="checkbox"
+                          checked={selectedChallans.includes(challan._id)}
+                          onChange={() => toggleSelect(challan._id)}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer w-4 h-4"
+                        />
+                      </td>
                       <td className="py-4 px-6 text-sm text-slate-700">
                         {new Date(challan.deliveryDate).toLocaleDateString(
                           "en-IN",
@@ -682,7 +982,7 @@ export default function ChallanPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="11" className="py-16 text-center">
+                    <td colSpan="12" className="py-16 text-center">
                       <Truck className="mx-auto h-12 w-12 text-slate-300 mb-3" />
                       <h3 className="text-lg font-medium text-slate-900">
                         No challans found
@@ -707,6 +1007,14 @@ export default function ChallanPage() {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
+                      <div className="pt-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedChallans.includes(challan._id)}
+                          onChange={() => toggleSelect(challan._id)}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer w-5 h-5"
+                        />
+                      </div>
                       <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center">
                         <FileText className="h-5 w-5 text-slate-400" />
                       </div>
@@ -978,256 +1286,162 @@ export default function ChallanPage() {
                 </button>
               </div>
 
-              <div className="overflow-y-auto flex-1 p-6">
-                {/* Header fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Challan Number <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="e.g. 1"
-                        value={challanNumber}
-                        onChange={(e) => setChallanNumber(e.target.value)}
-                        className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono placeholder:font-sans"
-                      />
-                      {!editId && (
-                        <div className="w-32 space-y-1">
-                          <input
-                            type="number"
-                            placeholder="Start #"
-                            onChange={(e) => setChallanNumber(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
-                            title="Force start series from this number"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Delivery Date <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={deliveryDate}
-                      onChange={(e) => setDeliveryDate(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Firm <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={firmId}
-                      onChange={(e) => setFirmId(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+              <div className="overflow-y-auto flex-1 p-6 bg-slate-50/50" ref={wrapperRef}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-semibold text-slate-900 tracking-wide uppercase">
+                    Challans to Create
+                  </h3>
+                  {!editId && (
+                    <button
+                      type="button"
+                      onClick={addChallanRow}
+                      className="px-3 py-1.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors flex items-center gap-1 shadow-sm"
                     >
-                      <option value="" disabled>
-                        Select Outbound Firm
-                      </option>
-                      {firms.map((f) => (
-                        <option key={f._id} value={f._id}>
-                          {f.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Party (Customer) <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={partyId}
-                      onChange={(e) => setPartyId(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                    >
-                      <option value="" disabled>
-                        Select Receiving Party
-                      </option>
-                      {parties.map((p) => (
-                        <option key={p._id} value={p._id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      <PlusIcon className="w-4 h-4" /> Add Challan
+                    </button>
+                  )}
                 </div>
 
-                {/* Stock Items Area */}
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-4 tracking-wide uppercase">
-                    Add Stock Items to Delivery
-                  </h3>
-                  <div className="flex flex-col gap-4 mb-4">
-                    {/* Searchable Dropdown */}
-                    <div className="relative" ref={wrapperRef}>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                        Search & Select Stock
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Search stock by Design Name or Inward Challan No..."
-                        value={stockSearchText}
-                        onChange={(e) => {
-                          setStockSearchText(e.target.value);
-                          setShowStockDropdown(true);
-                        }}
-                        onClick={() => setShowStockDropdown(true)}
-                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                      />
-                      {showStockDropdown && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                          {searchedStocks.length > 0 ? (
-                            searchedStocks.map((s) => (
-                              <div
-                                key={s._id}
-                                onClick={() => selectStockItem(s)}
-                                className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
-                              >
-                                <div className="flex justify-between items-center">
-                                  <span className="font-semibold text-slate-900">
-                                    {s.designId?.name}
-                                  </span>
-                                  <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                                    {s.qty} available
-                                  </span>
-                                </div>
-                                <div className="text-xs text-slate-500 mt-1 flex gap-3">
-                                  <span>Inward: {s.challanNo}</span>
-                                  <span>Party: {s.partyId?.name}</span>
-                                  <span>Firm: {s.firmId?.name}</span>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="px-4 py-3 text-sm text-slate-500 text-center">
-                              No matching stock found.
+                <div className="space-y-6">
+                  {items.map((item, index) => (
+                    <div key={index} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group">
+                      {items.length > 1 && !editId && (
+                        <button
+                          type="button"
+                          onClick={() => removeChallanRow(index)}
+                          className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-rose-200 text-rose-600 rounded-full flex items-center justify-center hover:bg-rose-50 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                      
+                      {/* Header Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-slate-100">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Challan No *</label>
+                          <input
+                            type="text"
+                            placeholder="CH-001"
+                            value={item.challanNumber}
+                            onChange={(e) => handleItemChange(index, "challanNumber", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Delivery Date *</label>
+                          <input
+                            type="date"
+                            value={item.deliveryDate}
+                            onChange={(e) => handleItemChange(index, "deliveryDate", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Firm *</label>
+                          <select
+                            value={item.firmId}
+                            onChange={(e) => handleItemChange(index, "firmId", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                          >
+                            <option value="">Select Firm</option>
+                            {firms.map((f) => <option key={f._id} value={f._id}>{f.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Party *</label>
+                          <select
+                            value={item.partyId}
+                            onChange={(e) => handleItemChange(index, "partyId", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                          >
+                            <option value="">Select Party</option>
+                            {parties.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Stock Selection */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                        <div className="col-span-12 md:col-span-6 space-y-1.5 relative">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Search & Select Stock *</label>
+                          <input
+                            type="text"
+                            placeholder="Search by Design Name or Inward Challan..."
+                            value={item.stockSearchText}
+                            onChange={(e) => {
+                              handleItemChange(index, "stockSearchText", e.target.value);
+                              setActiveDropdownIndex(index);
+                            }}
+                            onClick={() => setActiveDropdownIndex(index)}
+                            onBlur={() => setTimeout(() => setActiveDropdownIndex(null), 200)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                          />
+                          {activeDropdownIndex === index && (
+                            <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                              {stockList.filter(s => 
+                                s.designId?.name?.toLowerCase().includes((item.stockSearchText || "").toLowerCase()) || 
+                                s.challanNo?.toLowerCase().includes((item.stockSearchText || "").toLowerCase())
+                              ).length > 0 ? (
+                                stockList.filter(s => 
+                                  s.designId?.name?.toLowerCase().includes((item.stockSearchText || "").toLowerCase()) || 
+                                  s.challanNo?.toLowerCase().includes((item.stockSearchText || "").toLowerCase())
+                                ).map((s) => (
+                                  <div
+                                    key={s._id}
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      selectStockItem(index, s);
+                                    }}
+                                    className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span className="font-semibold text-slate-900">{s.designId?.name}</span>
+                                      <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full">{s.qty} available</span>
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1 flex gap-3">
+                                      <span>Inward: {s.challanNo}</span>
+                                      <span>Firm: {s.firmId?.name}</span>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="px-4 py-3 text-sm text-slate-500 text-center">No matching stock found.</div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Qty / Rate / Add */}
-                    <div className="flex flex-col sm:flex-row gap-3 items-end">
-                      <div className="flex-1 w-full space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-600">
-                          Dispatch Qty (Max:{" "}
-                          {stockList.find((s) => s._id === selectedStockId)
-                            ?.qty || "-"}
-                          )
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="Qty"
-                          value={deliveryQty}
-                          onChange={(e) => setDeliveryQty(e.target.value)}
-                          className="w-full bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono"
-                        />
-                      </div>
-                      <div className="flex-1 w-full space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-600">
-                          Dispatch Rate
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="Rate ₹"
-                          value={deliveryRate}
-                          onChange={(e) => setDeliveryRate(e.target.value)}
-                          className="w-full bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono"
-                        />
-                      </div>
-                      <button
-                        onClick={handleAddItem}
-                        disabled={!selectedStockId}
-                        className="w-full sm:w-auto bg-slate-800 text-white px-6 py-2.5 rounded-xl hover:bg-slate-700 shadow-sm transition-colors text-sm font-medium disabled:opacity-50"
-                      >
-                        Add Item
-                      </button>
-                    </div>
-                  </div>
+                        <div className="col-span-6 md:col-span-2 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Qty *</label>
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={item.qty}
+                            onChange={(e) => handleItemChange(index, "qty", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono"
+                          />
+                        </div>
 
-                  {/* Added Items Table */}
-                  {items.length > 0 && (
-                    <div className="mt-6 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                      <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 border-b border-slate-100">
-                          <tr>
-                            <th className="font-semibold text-slate-600 px-4 py-3">
-                              Design Item
-                            </th>
-                            <th className="font-semibold text-slate-600 px-4 py-3 text-right">
-                              Rate
-                            </th>
-                            <th className="font-semibold text-slate-600 px-4 py-3 text-right">
-                              Qty
-                            </th>
-                            <th className="font-semibold text-slate-600 px-4 py-3 text-right">
-                              Amount
-                            </th>
-                            <th className="w-12 px-4 py-3"></th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {items.map((item, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/50">
-                              <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
-                                {item.stockPhoto && (
-                                  <img
-                                    src={item.stockPhoto}
-                                    alt={item.designName}
-                                    className="w-8 h-8 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setPreviewImage(item.stockPhoto);
-                                    }}
-                                  />
-                                )}
-                                {item.designName}
-                              </td>
-                              <td className="px-4 py-3 text-right font-mono text-slate-600">
-                                ₹{item.rate}
-                              </td>
-                              <td className="px-4 py-3 text-right font-mono font-semibold text-slate-700">
-                                {item.qty}
-                              </td>
-                              <td className="px-4 py-3 text-right font-mono text-emerald-600 font-bold">
-                                ₹
-                                {(item.rate * item.qty).toLocaleString("en-IN")}
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <button
-                                  onClick={() => removeItem(idx)}
-                                  className="text-rose-400 hover:text-rose-600 p-1 hover:bg-rose-50 rounded transition-colors"
-                                >
-                                  <TrashIcon className="w-4 h-4" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          <tr className="bg-slate-50/50 font-semibold border-t-2 border-slate-200">
-                            <td
-                              colSpan="2"
-                              className="px-4 py-3 text-slate-700 text-right"
-                            >
-                              Total Shipment:
-                            </td>
-                            <td className="px-4 py-3 text-right text-emerald-600 text-base">
-                              {formTotalQty}
-                            </td>
-                            <td className="px-4 py-3 text-right text-emerald-600 text-base">
-                              ₹{formTotalAmt.toLocaleString("en-IN")}
-                            </td>
-                            <td></td>
-                          </tr>
-                        </tbody>
-                      </table>
+                        <div className="col-span-6 md:col-span-2 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Rate</label>
+                          <input
+                            type="number"
+                            placeholder="0.00"
+                            value={item.rate}
+                            onChange={(e) => handleItemChange(index, "rate", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono"
+                          />
+                        </div>
+
+                        <div className="col-span-12 md:col-span-2 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Amount</label>
+                          <div className="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-mono font-bold text-right">
+                            ₹{item.qty && item.rate ? (item.qty * item.rate).toLocaleString("en-IN") : 0}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
@@ -1243,7 +1457,7 @@ export default function ChallanPage() {
                   onClick={saveChallan}
                   className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={
-                    !challanNumber || !partyId || !firmId || items.length === 0
+                    items.length === 0 || items.some(i => !i.challanNumber || !i.partyId || !i.firmId || !i.stockId || !i.qty)
                   }
                 >
                   {editId ? "Update Challan" : "Save Challan"}

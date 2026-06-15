@@ -5,7 +5,6 @@ import { Lock, User, Mail, UserPlus } from "lucide-react";
 
 export default function Signup() {
   const [form, setForm] = useState({
-    companyName: "",
     fullname: "",
     username: "",
     email: "",
@@ -59,23 +58,7 @@ export default function Signup() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">
-              Company Name
-            </label>
-            <div className="relative">
-              <UserPlus className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-              <input
-                type="text"
-                name="companyName"
-                value={form.companyName}
-                onChange={handleChange}
-                required
-                className="w-full pl-11 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
-                placeholder="Acme Corp"
-              />
-            </div>
-          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">
               Full Name

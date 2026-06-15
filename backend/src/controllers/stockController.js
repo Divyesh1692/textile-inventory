@@ -24,7 +24,6 @@ exports.createStock = async (req, res) => {
       qty,
       rate,
       Amount,
-      companyId: req.user.companyId,
     });
 
     await stock.save();
@@ -35,9 +34,38 @@ exports.createStock = async (req, res) => {
   }
 };
 
+exports.createBulkStock = async (req, res) => {
+  try {
+    const { items } = req.body;
+
+    if (!items || !items.length) {
+      return res.status(400).json({ message: "No items provided" });
+    }
+
+    const stockDocuments = items.map((item) => ({
+      date: item.date,
+      challanNo: item.challanNo,
+      partyId: item.partyId,
+      firmId: item.firmId,
+      designId: item.designId,
+      chartNo: item.chartNo,
+      qty: item.qty,
+      rate: item.rate,
+      Amount: item.qty * item.rate,
+    }));
+
+    const stocks = await Stock.insertMany(stockDocuments);
+
+    res.status(201).json({ message: "Bulk stock added", stocks });
+  } catch (err) {
+    console.error("createBulkStock error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.getStocks = async (req, res) => {
   try {
-    const stocks = await Stock.find({ companyId: req.user.companyId })
+    const stocks = await Stock.find({})
       .populate("designId")
       .populate("firmId")
       .populate("partyId")
@@ -52,7 +80,7 @@ exports.getStocks = async (req, res) => {
 
 exports.updateStock = async (req, res) => {
   try {
-    const stock = await Stock.findOneAndUpdate({ _id: req.params.id, companyId: req.user.companyId }, req.body, {
+    const stock = await Stock.findOneAndUpdate({ _id: req.params.id }, req.body, {
       new: true,
     });
 
@@ -67,7 +95,7 @@ exports.updateStock = async (req, res) => {
 
 exports.deleteStock = async (req, res) => {
   try {
-    const stock = await Stock.findOneAndDelete({ _id: req.params.id, companyId: req.user.companyId });
+    const stock = await Stock.findOneAndDelete({ _id: req.params.id });
 
     if (!stock) return res.status(404).json({ message: "Stock not found" });
 

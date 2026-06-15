@@ -64,7 +64,7 @@ const createDesign = async (req, res) => {
           oldRate: d.oldRate || 0,
           rate: d.rate || 0,
           photos,
-          companyId: req.user.companyId,
+
         });
         await design.save();
         createdDesigns.push(design);
@@ -102,7 +102,7 @@ const createDesign = async (req, res) => {
       oldRate,
       rate,
       photos: photos || [],
-      companyId: req.user.companyId,
+
     });
 
     await design.save();
@@ -115,7 +115,8 @@ const createDesign = async (req, res) => {
 
 const getDesigns = async (req, res) => {
   try {
-    const designs = await Design.find({ companyId: req.user.companyId });
+    const designs = await Design.find({
+ });
     res.json(designs);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -156,7 +157,8 @@ const updateDesign = async (req, res) => {
     };
 
     const design = await Design.findOneAndUpdate(
-      { _id: id, companyId: req.user.companyId },
+      { _id: id,
+ },
       updateData,
       { new: true }
     );
@@ -174,7 +176,8 @@ const deleteDesign = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const design = await Design.findOneAndDelete({ _id: id, companyId: req.user.companyId });
+    const design = await Design.findOneAndDelete({ _id: id,
+ });
 
     if (!design) return res.status(404).json({ message: "Design not found" });
 

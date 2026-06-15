@@ -19,14 +19,11 @@ export default function StockPage() {
   const [previewImage, setPreviewImage] = useState(null);
 
   // Form state
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [challanNo, setChallanNo] = useState("");
-  const [designId, setDesignId] = useState("");
-  const [chartNo, setChartNo] = useState("");
-  const [qty, setQty] = useState("");
-  const [rate, setRate] = useState("");
-  const [firmId, setFirmId] = useState("");
-  const [partyId, setPartyId] = useState("");
+  const defaultDate = new Date().toISOString().split("T")[0];
+  const [items, setItems] = useState([{ 
+    date: defaultDate, challanNo: "", firmId: "", partyId: "", 
+    designId: "", chartNo: "", qty: "", rate: "" 
+  }]);
 
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -67,57 +64,60 @@ export default function StockPage() {
   }, []);
 
   // Auto-fill rate when design changes
-  const handleDesignChange = (id) => {
-    setDesignId(id);
-    const selected = designs.find((d) => d._id === id);
-    if (selected) {
-      setRate(selected.rate ?? "");
-    } else {
-      setRate("");
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...items];
+    newItems[index][field] = value;
+    
+    if (field === "designId") {
+      const selected = designs.find((d) => d._id === value);
+      newItems[index].rate = selected ? selected.rate ?? "" : "";
     }
+    setItems(newItems);
   };
 
-  // Computed amount
-  const amount = qty && rate ? Number(qty) * Number(rate) : 0;
+  const addItemRow = () => {
+    const lastItem = items[items.length - 1];
+    setItems([...items, { 
+      date: lastItem?.date || defaultDate, 
+      challanNo: lastItem?.challanNo || "", 
+      firmId: lastItem?.firmId || "", 
+      partyId: lastItem?.partyId || "", 
+      designId: "", chartNo: "", qty: "", rate: "" 
+    }]);
+  };
+  const removeItemRow = (index) => setItems(items.filter((_, i) => i !== index));
 
   const handleSubmit = async () => {
-    if (
-      !date ||
-      !challanNo ||
-      !designId ||
-      !chartNo ||
-      !qty ||
-      !firmId ||
-      !partyId
-    ) {
-      alert("Please fill all required fields");
+    const validItems = items.filter(i => i.date && i.challanNo && i.firmId && i.partyId && i.designId && i.chartNo && i.qty);
+    if (!validItems.length) {
+      alert("Please ensure all required fields are filled for at least one item.");
       return;
     }
 
-    if (
-      editStockId &&
-      !window.confirm("Are you sure you want to update this stock entry?")
-    ) {
+    if (editStockId && !window.confirm("Are you sure you want to update this stock entry?")) {
       return;
     }
 
     try {
-      const payload = {
-        date,
-        challanNo,
-        designId,
-        chartNo,
-        qty: Number(qty),
-        rate: Number(rate),
-        Amount: amount,
-        firmId,
-        partyId,
-      };
-
       if (editStockId) {
+        const item = validItems[0];
+        const payload = {
+          date: item.date,
+          challanNo: item.challanNo,
+          designId: item.designId,
+          chartNo: item.chartNo,
+          qty: Number(item.qty),
+          rate: Number(item.rate),
+          Amount: Number(item.qty) * Number(item.rate),
+          firmId: item.firmId,
+          partyId: item.partyId,
+        };
         await axios.put(`/stock/${editStockId}`, payload);
       } else {
-        await axios.post("/stock/add", payload);
+        const payload = {
+          items: validItems.map(i => ({ ...i, qty: Number(i.qty), rate: Number(i.rate) }))
+        };
+        await axios.post("/stock/bulk", payload);
       }
       await fetchData();
       handleModalClose();
@@ -129,14 +129,16 @@ export default function StockPage() {
 
   const handleEditClick = (stock) => {
     setEditStockId(stock._id);
-    setDate(stock.date ? new Date(stock.date).toISOString().split("T")[0] : "");
-    setChallanNo(stock.challanNo || "");
-    setDesignId(stock.designId?._id || stock.designId || "");
-    setChartNo(stock.chartNo || "");
-    setQty(stock.qty || "");
-    setRate(stock.rate || "");
-    setFirmId(stock.firmId?._id || stock.firmId || "");
-    setPartyId(stock.partyId?._id || stock.partyId || "");
+    setItems([{
+      date: stock.date ? new Date(stock.date).toISOString().split("T")[0] : "",
+      challanNo: stock.challanNo || "",
+      firmId: stock.firmId?._id || stock.firmId || "",
+      partyId: stock.partyId?._id || stock.partyId || "",
+      designId: stock.designId?._id || stock.designId || "",
+      chartNo: stock.chartNo || "",
+      qty: stock.qty || "",
+      rate: stock.rate || ""
+    }]);
     setShowAddForm(true);
   };
 
@@ -155,14 +157,7 @@ export default function StockPage() {
   const handleModalClose = () => {
     setShowAddForm(false);
     setEditStockId(null);
-    setDate(new Date().toISOString().split("T")[0]);
-    setChallanNo("");
-    setDesignId("");
-    setChartNo("");
-    setQty("");
-    setRate("");
-    setFirmId("");
-    setPartyId("");
+    setItems([{ date: defaultDate, challanNo: "", firmId: "", partyId: "", designId: "", chartNo: "", qty: "", rate: "" }]);
   };
 
   const resetFilters = () => {
@@ -699,217 +694,136 @@ export default function StockPage() {
                 </button>
               </div>
 
-              <div className="px-6 py-6 border-b border-slate-100">
-                <h3 className="text-sm font-semibold text-slate-900 mb-4 tracking-wide uppercase">
-                  Stock Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Date <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Challan No <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. CH-001"
-                      value={challanNo}
-                      onChange={(e) => setChallanNo(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Design <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={designId}
-                        onChange={(e) => handleDesignChange(e.target.value)}
-                        className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm appearance-none focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                      >
-                        <option value="" disabled>
-                          Select Design
-                        </option>
-                        {designs.map((d) => (
-                          <option key={d._id} value={d._id}>
-                            {d.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          ></path>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Chart No <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. C-100"
-                      value={chartNo}
-                      onChange={(e) => setChartNo(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Firm <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={firmId}
-                        onChange={(e) => setFirmId(e.target.value)}
-                        className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm appearance-none focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                      >
-                        <option value="" disabled>
-                          Select Firm
-                        </option>
-                        {firms.map((f) => (
-                          <option key={f._id} value={f._id}>
-                            {f.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          ></path>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Party <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={partyId}
-                        onChange={(e) => setPartyId(e.target.value)}
-                        className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm appearance-none focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                      >
-                        <option value="" disabled>
-                          Select Party
-                        </option>
-                        {parties.map((p) => (
-                          <option key={p._id} value={p._id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          ></path>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+              <div className="px-6 py-6 bg-slate-50/50">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-semibold text-slate-900 tracking-wide uppercase">
+                    Stock Details
+                  </h3>
+                  {!editStockId && (
+                    <button
+                      type="button"
+                      onClick={addItemRow}
+                      className="px-3 py-1.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors flex items-center gap-1"
+                    >
+                      <PlusIcon className="w-4 h-4" /> Add Item
+                    </button>
+                  )}
                 </div>
-              </div>
 
-              <div className="px-6 py-6">
-                <h3 className="text-sm font-semibold text-slate-900 mb-4 tracking-wide uppercase">
-                  Quantity & Rate
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Quantity <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={qty}
-                      onChange={(e) => setQty(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Rate (₹){" "}
-                      <span className="text-xs text-amber-600">
-                        (auto from design)
-                      </span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 font-medium font-mono">
-                        ₹
+                <div className="space-y-6">
+                  {items.map((item, index) => (
+                    <div key={index} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group">
+                      {items.length > 1 && !editStockId && (
+                        <button
+                          type="button"
+                          onClick={() => removeItemRow(index)}
+                          className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-rose-200 text-rose-600 rounded-full flex items-center justify-center hover:bg-rose-50 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+                        >
+                          &times;
+                        </button>
+                      )}
+                      
+                      {/* Header Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-slate-100">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Date *</label>
+                          <input
+                            type="date"
+                            value={item.date}
+                            onChange={(e) => handleItemChange(index, "date", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Challan No *</label>
+                          <input
+                            type="text"
+                            placeholder="CH-001"
+                            value={item.challanNo}
+                            onChange={(e) => handleItemChange(index, "challanNo", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Firm *</label>
+                          <select
+                            value={item.firmId}
+                            onChange={(e) => handleItemChange(index, "firmId", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          >
+                            <option value="">Select Firm</option>
+                            {firms.map((f) => <option key={f._id} value={f._id}>{f.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Party *</label>
+                          <select
+                            value={item.partyId}
+                            onChange={(e) => handleItemChange(index, "partyId", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          >
+                            <option value="">Select Party</option>
+                            {parties.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+                          </select>
+                        </div>
                       </div>
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={rate}
-                        onChange={(e) => setRate(e.target.value)}
-                        className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">
-                      Amount (₹)
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 font-medium font-mono">
-                        ₹
+                      {/* Detail Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                        <div className="col-span-3 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Design *</label>
+                          <select
+                            value={item.designId}
+                            onChange={(e) => handleItemChange(index, "designId", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          >
+                            <option value="">Select Design</option>
+                            {designs.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                          </select>
+                        </div>
+
+                        <div className="col-span-3 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Chart No *</label>
+                          <input
+                            type="text"
+                            placeholder="C-100"
+                            value={item.chartNo}
+                            onChange={(e) => handleItemChange(index, "chartNo", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
+                          />
+                        </div>
+
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Qty *</label>
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={item.qty}
+                            onChange={(e) => handleItemChange(index, "qty", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
+                          />
+                        </div>
+
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Rate</label>
+                          <input
+                            type="number"
+                            placeholder="0.00"
+                            value={item.rate}
+                            onChange={(e) => handleItemChange(index, "rate", e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
+                          />
+                        </div>
+
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">Amount</label>
+                          <div className="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-mono font-bold text-right">
+                            ₹{item.qty && item.rate ? (item.qty * item.rate).toLocaleString("en-IN") : 0}
+                          </div>
+                        </div>
                       </div>
-                      <input
-                        type="text"
-                        value={amount.toLocaleString()}
-                        readOnly
-                        className="w-full pl-8 pr-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm font-mono text-emerald-800 font-bold cursor-not-allowed"
-                      />
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
@@ -923,19 +837,11 @@ export default function StockPage() {
                 <button
                   onClick={handleSubmit}
                   className="w-full sm:w-auto px-6 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  disabled={
-                    !date ||
-                    !challanNo ||
-                    !designId ||
-                    !chartNo ||
-                    !qty ||
-                    !firmId ||
-                    !partyId
-                  }
+                  disabled={items.filter(i => i.date && i.challanNo && i.firmId && i.partyId && i.designId && i.chartNo && i.qty).length === 0}
                 >
                   {editStockId
                     ? "Confirm & Update Stock"
-                    : "Confirm & Add Stock"}
+                    : "Confirm & Add Bulk Stock"}
                 </button>
               </div>
             </div>

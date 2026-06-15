@@ -23,7 +23,6 @@ const firmSchema = new mongoose.Schema(
       type: String, // Cloudinary URL
       default: "",
     },
-    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
   },
   { timestamps: true }
 );

@@ -24,7 +24,6 @@ const partySchema = new mongoose.Schema(
       default: 0,
     },
   
-    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
   },
   { timestamps: true }
 );

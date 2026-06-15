@@ -65,7 +65,6 @@ const stockSchema = new mongoose.Schema(
       enum: ["Pending", "Delivered"],
       default: "Pending",
     },
-    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
   },
   { timestamps: true },
 );
