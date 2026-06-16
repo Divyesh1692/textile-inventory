@@ -447,6 +447,9 @@ export default function StockPage() {
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
                     Amount
                   </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                    Profit
+                  </th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                     Status
                   </th>
@@ -515,6 +518,9 @@ export default function StockPage() {
                       </td>
                       <td className="py-4 px-6 text-right text-sm font-bold text-emerald-600">
                         ₹{(stock.Amount || 0).toLocaleString()}
+                      </td>
+                      <td className="py-4 px-6 text-right text-sm font-bold text-emerald-600">
+                        ₹{((stock.rate - (stock.costing || stock.designId?.costing || 0)) * stock.qty).toLocaleString()}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span
@@ -602,6 +608,9 @@ export default function StockPage() {
                     <div className="text-right">
                       <p className="text-sm font-bold text-emerald-600">
                         ₹{(stock.Amount || 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-emerald-600 font-semibold mb-1">
+                        Prof: ₹{((stock.rate - (stock.costing || stock.designId?.costing || 0)) * stock.qty).toLocaleString()}
                       </p>
                       <p className="text-xs text-slate-500">
                         Qty: {stock.qty} × ₹{stock.rate}

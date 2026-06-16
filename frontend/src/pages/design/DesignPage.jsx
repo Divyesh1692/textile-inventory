@@ -122,6 +122,8 @@ export default function DesignPage() {
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Old Rate</th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rate</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Costing</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Profit</th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
@@ -147,6 +149,8 @@ export default function DesignPage() {
                   <td className="py-4 px-6">{d.name}</td>
                   <td className="py-4 px-6">{d.oldRate}</td>
                   <td className="p-3 font-semibold">{d.rate}</td>
+                  <td className="py-4 px-6 text-rose-600 font-medium">{d.costing || 0}</td>
+                  <td className="py-4 px-6 text-emerald-600 font-bold">{(d.rate || 0) - (d.costing || 0)}</td>
                   <td className="py-4 px-6">
                     <div className="flex items-center justify-end gap-2">
                       <button
@@ -211,6 +215,12 @@ export default function DesignPage() {
                     </div>
                     <div className="text-sm font-semibold">
                       Rate: {d.rate ?? "-"}
+                    </div>
+                    <div className="text-sm font-medium text-rose-600">
+                      Costing: {d.costing ?? 0}
+                    </div>
+                    <div className="text-sm font-bold text-emerald-600">
+                      Profit: {(d.rate || 0) - (d.costing || 0)}
                     </div>
                   </div>
                 </div>

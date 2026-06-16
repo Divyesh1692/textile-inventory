@@ -8,8 +8,8 @@ import axios from "axios";
 //
 
 const instance = axios.create({
-  // baseURL: "http://localhost:5050/api", // <-- correct port for your backend
-  baseURL: "https://billtex.onrender.com/api", // <-- correct port for your backend
+  baseURL: "http://localhost:5050/api", // <-- correct port for your backend
+  // baseURL: "https://billtex.onrender.com/api", // <-- correct port for your backend
 });
 
 instance.interceptors.request.use(

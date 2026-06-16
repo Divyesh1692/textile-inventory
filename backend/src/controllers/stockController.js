@@ -1,4 +1,5 @@
 const Stock = require("../models/Stock");
+const Design = require("../models/Design");
 
 exports.createStock = async (req, res) => {
   try {
@@ -14,6 +15,9 @@ exports.createStock = async (req, res) => {
       Amount,
     } = req.body;
 
+    const design = await Design.findById(designId);
+    const costing = design ? design.costing : 0;
+
     const stock = new Stock({
       date,
       challanNo,
@@ -23,6 +27,7 @@ exports.createStock = async (req, res) => {
       firmId,
       qty,
       rate,
+      costing,
       Amount,
     });
 
@@ -42,6 +47,11 @@ exports.createBulkStock = async (req, res) => {
       return res.status(400).json({ message: "No items provided" });
     }
 
+    const designIds = [...new Set(items.map(i => i.designId))];
+    const designs = await Design.find({ _id: { $in: designIds } });
+    const designMap = {};
+    designs.forEach(d => { designMap[d._id.toString()] = d.costing || 0; });
+
     const stockDocuments = items.map((item) => ({
       date: item.date,
       challanNo: item.challanNo,
@@ -51,6 +61,7 @@ exports.createBulkStock = async (req, res) => {
       chartNo: item.chartNo,
       qty: item.qty,
       rate: item.rate,
+      costing: designMap[item.designId.toString()] || 0,
       Amount: item.qty * item.rate,
     }));
 

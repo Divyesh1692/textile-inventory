@@ -14,13 +14,13 @@ import axios from "../../utils/axios";
  */
 export default function BulkDesignModal({ onClose }) {
   const [rows, setRows] = useState([
-    { name: "", oldRate: "", rate: "", photos: [] },
+    { name: "", oldRate: "", rate: "", costing: "", photos: [] },
   ]);
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
   const addRow = () =>
-    setRows([...rows, { name: "", oldRate: "", rate: "", photos: [] }]);
+    setRows([...rows, { name: "", oldRate: "", rate: "", costing: "", photos: [] }]);
   const removeRow = (i) => setRows(rows.filter((_, idx) => idx !== i));
   const change = (i, field, value) => {
     const u = [...rows];
@@ -50,6 +50,7 @@ export default function BulkDesignModal({ onClose }) {
         formData.append(`designs[${idx}][name]`, r.name);
         formData.append(`designs[${idx}][oldRate]`, r.oldRate || 0);
         formData.append(`designs[${idx}][rate]`, r.rate || 0);
+        formData.append(`designs[${idx}][costing]`, r.costing || 0);
 
         (r.photos || []).forEach((file) => {
           formData.append(`designs[${idx}][photos]`, file);
@@ -90,7 +91,7 @@ export default function BulkDesignModal({ onClose }) {
                 </button>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <input
                   className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
                   placeholder="Design name"
@@ -110,6 +111,13 @@ export default function BulkDesignModal({ onClose }) {
                   type="number"
                   value={r.oldRate}
                   onChange={(e) => change(i, "oldRate", e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                  placeholder="Costing"
+                  type="number"
+                  value={r.costing}
+                  onChange={(e) => change(i, "costing", e.target.value)}
                 />
               </div>
 

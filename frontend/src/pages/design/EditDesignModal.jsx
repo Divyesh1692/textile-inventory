@@ -20,6 +20,7 @@ export default function EditDesignModal({ design, onClose }) {
     description: "",
     oldRate: "",
     rate: "",
+    costing: "",
     photos: [], // files to add
     keepPhotos: [], // existing urls
   });
@@ -33,6 +34,7 @@ export default function EditDesignModal({ design, onClose }) {
       description: design.description || "",
       oldRate: design.oldRate ?? "",
       rate: design.rate ?? "",
+      costing: design.costing ?? "",
       photos: [],
       keepPhotos: design.photos || [],
     });
@@ -66,6 +68,7 @@ export default function EditDesignModal({ design, onClose }) {
     fd.append("description", form.description || "");
     fd.append("oldRate", form.oldRate || 0);
     fd.append("rate", form.rate || 0);
+    fd.append("costing", form.costing || 0);
 
     // keep existing photos as JSON array so backend won't delete them
     fd.append("keepPhotos", JSON.stringify(form.keepPhotos || []));
@@ -121,7 +124,7 @@ export default function EditDesignModal({ design, onClose }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <input
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
               placeholder="Old rate"
@@ -135,6 +138,13 @@ export default function EditDesignModal({ design, onClose }) {
               type="number"
               value={form.rate}
               onChange={(e) => setForm({ ...form, rate: e.target.value })}
+            />
+            <input
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+              placeholder="Costing"
+              type="number"
+              value={form.costing}
+              onChange={(e) => setForm({ ...form, costing: e.target.value })}
             />
           </div>
 

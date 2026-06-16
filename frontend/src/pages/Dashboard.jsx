@@ -138,9 +138,22 @@ export default function Dashboard() {
     return stocks.filter((s) => {
       if (firmFilter && s.firmId?._id !== firmFilter) return false;
       if (partyFilter && s.partyId?._id !== partyFilter) return false;
+      const d = new Date(s.deliveryDate || s.date || s.createdAt);
+      if (monthFilter && d.getMonth() !== parseInt(monthFilter)) return false;
+      if (yearFilter && d.getFullYear() !== parseInt(yearFilter)) return false;
+      if (dateFrom && d < new Date(dateFrom)) return false;
+      if (dateTo && d > new Date(dateTo + "T23:59:59")) return false;
       return true;
     });
-  }, [stocks, firmFilter, partyFilter]);
+  }, [
+    stocks,
+    firmFilter,
+    partyFilter,
+    monthFilter,
+    yearFilter,
+    dateFrom,
+    dateTo,
+  ]);
 
   // ── Computed stats ──
   const pendingStock = filteredStocks.filter((s) => s.status === "Pending");
@@ -149,12 +162,25 @@ export default function Dashboard() {
   const billedChallan = filteredChallans.filter((c) => c.status === "Billed");
   const printedChallan = filteredChallans.filter((c) => c.status === "Printed");
 
+  const pendingStockQty = pendingStock.reduce((acc, s) => acc + (s.qty || 0), 0);
+  const deliveredStockQty = deliveredStock.reduce((acc, s) => acc + (s.qty || 0), 0);
+
   const pendingStockValue = pendingStock.reduce(
     (acc, s) => acc + (s.qty || 0) * (s.rate || 0),
     0,
   );
   const deliveredStockValue = deliveredStock.reduce(
     (acc, s) => acc + (s.qty || 0) * (s.rate || 0),
+    0,
+  );
+
+  const totalProfit = filteredStocks.reduce(
+    (acc, s) => acc + ((s.rate || 0) - (s.costing || s.designId?.costing || 0)) * (s.qty || 0),
+    0,
+  );
+
+  const pendingProfit = pendingStock.reduce(
+    (acc, s) => acc + ((s.rate || 0) - (s.costing || s.designId?.costing || 0)) * (s.qty || 0),
     0,
   );
 
@@ -268,8 +294,8 @@ export default function Dashboard() {
   const statCards = [
     {
       title: "Pending Stock",
-      value: pendingStock.length,
-      sub: fmtShort(pendingStockValue) + " est. value",
+      value: pendingStockQty + " Qty",
+      sub: `${pendingStock.length} items · ${fmtShort(pendingStockValue)} est.`,
       icon: Clock,
       gradient: "from-amber-400 to-orange-500",
       bg: "bg-amber-50",
@@ -278,8 +304,8 @@ export default function Dashboard() {
     },
     {
       title: "Delivered Stock",
-      value: deliveredStock.length,
-      sub: fmtShort(deliveredStockValue) + " est. value",
+      value: deliveredStockQty + " Qty",
+      sub: `${deliveredStock.length} items · ${fmtShort(deliveredStockValue)} est.`,
       icon: CheckCircle2,
       gradient: "from-emerald-400 to-teal-500",
       bg: "bg-emerald-50",
@@ -325,6 +351,26 @@ export default function Dashboard() {
       bg: "bg-green-50",
       iconColor: "text-green-600",
       border: "border-green-100",
+    },
+    {
+      title: "Total Profit",
+      value: fmtShort(totalProfit),
+      sub: "Across all stock",
+      icon: TrendingUp,
+      gradient: "from-teal-400 to-cyan-500",
+      bg: "bg-teal-50",
+      iconColor: "text-teal-600",
+      border: "border-teal-100",
+    },
+    {
+      title: "Pending Profit",
+      value: fmtShort(pendingProfit),
+      sub: "From pending stock",
+      icon: Clock,
+      gradient: "from-blue-400 to-sky-500",
+      bg: "bg-sky-50",
+      iconColor: "text-sky-600",
+      border: "border-sky-100",
     },
   ];
 
@@ -428,8 +474,8 @@ export default function Dashboard() {
 
         {/* ── Stat Cards ── */}
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
                 className="h-32 rounded-2xl bg-slate-100 animate-pulse"
@@ -437,7 +483,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {statCards.map((card, i) => {
               const Icon = card.icon;
               return (
@@ -574,6 +620,7 @@ export default function Dashboard() {
                 {
                   label: "Pending",
                   count: pendingStock.length,
+                  qty: pendingStockQty,
                   value: pendingStockValue,
                   color: "bg-amber-500",
                   light: "bg-amber-50 text-amber-700",
@@ -581,6 +628,7 @@ export default function Dashboard() {
                 {
                   label: "Delivered",
                   count: deliveredStock.length,
+                  qty: deliveredStockQty,
                   value: deliveredStockValue,
                   color: "bg-emerald-500",
                   light: "bg-emerald-50 text-emerald-700",
@@ -601,7 +649,7 @@ export default function Dashboard() {
                         {row.label}
                       </span>
                       <span className="text-sm font-bold text-slate-800">
-                        {row.count} items
+                        {row.qty} qty ({row.count} items)
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-slate-400">

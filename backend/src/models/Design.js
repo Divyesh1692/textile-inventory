@@ -15,7 +15,10 @@ const designSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
+    costing: {
+      type: Number,
+      default: 0,
+    },
     photos: [
       {
         type: String, // Cloudinary image URL
