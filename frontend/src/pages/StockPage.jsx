@@ -32,6 +32,7 @@ export default function StockPage() {
   const [endDate, setEndDate] = useState("");
   const [firmFilter, setFirmFilter] = useState("");
   const [partyFilter, setPartyFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [stockList, setStockList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -167,6 +168,7 @@ export default function StockPage() {
     setEndDate("");
     setFirmFilter("");
     setPartyFilter("");
+    setStatusFilter("all");
     setCurrentPage(1);
   };
 
@@ -223,7 +225,8 @@ export default function StockPage() {
       }
     }
 
-    return matchesSearch && matchesFirm && matchesParty && matchesDate;
+    const statusMatch = statusFilter === "all" || s.status === statusFilter;
+    return matchesSearch && matchesFirm && matchesParty && matchesDate && statusMatch;
   });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -341,6 +344,21 @@ export default function StockPage() {
                   <option value="monthly">Last 30 Days</option>
                   <option value="yearly">Last Year</option>
                   <option value="custom">Custom Range</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Status
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Delivered">Delivered</option>
                 </select>
               </div>
 
@@ -671,7 +689,7 @@ export default function StockPage() {
               onClick={handleModalClose}
             />
 
-            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 animate-in fade-in zoom-in-95 duration-200">
               <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">
@@ -779,7 +797,7 @@ export default function StockPage() {
 
                       {/* Detail Row */}
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="col-span-3 space-y-1.5">
+                        <div className="col-span-4 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Design *</label>
                           <select
                             value={item.designId}
@@ -791,7 +809,7 @@ export default function StockPage() {
                           </select>
                         </div>
 
-                        <div className="col-span-3 space-y-1.5">
+                        <div className="col-span-2 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Chart No *</label>
                           <input
                             type="text"

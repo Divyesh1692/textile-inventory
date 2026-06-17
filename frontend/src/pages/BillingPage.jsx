@@ -352,6 +352,7 @@ export default function BillingPage() {
   const [endDate, setEndDate] = useState("");
   const [firmFilter, setFirmFilter] = useState("");
   const [partyFilter, setPartyFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
@@ -362,6 +363,7 @@ export default function BillingPage() {
     setEndDate("");
     setFirmFilter("");
     setPartyFilter("");
+    setStatusFilter("all");
     setCurrentPage(1);
   };
 
@@ -592,7 +594,8 @@ const filtered = billList.filter((b) => {
         }
       }
     }
-    return searchMatch && firmMatch && partyMatch && dateMatch;
+    const statusMatch = statusFilter === "all" || b.status === statusFilter || (statusFilter === "Unpaid" && !b.status);
+    return searchMatch && firmMatch && partyMatch && dateMatch && statusMatch;
   });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -720,6 +723,22 @@ const filtered = billList.filter((b) => {
                   {parties.map((p) => (
                     <option key={p._id} value={p._id}>{p.name}</option>
                   ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Status
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {setStatusFilter(e.target.value); setCurrentPage(1);}}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="Unpaid">Unpaid</option>
+                  <option value="Printed">Printed</option>
+                  <option value="Paid">Paid</option>
                 </select>
               </div>
 

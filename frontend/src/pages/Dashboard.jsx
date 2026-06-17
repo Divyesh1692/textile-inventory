@@ -294,8 +294,19 @@ export default function Dashboard() {
   const statCards = [
     {
       title: "Pending Stock",
-      value: pendingStockQty + " Qty",
-      sub: `${pendingStock.length} items · ${fmtShort(pendingStockValue)} est.`,
+      value: (
+        <div className="flex items-baseline gap-1.5">
+          <span>{pendingStockQty}</span>
+          <span className="text-lg text-slate-500 font-medium">Qty</span>
+        </div>
+      ),
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          <span className="font-semibold text-amber-700">{fmtShort(pendingStockValue)}</span> value
+          <span className="text-slate-300">&bull;</span>
+          {pendingStock.length} items
+        </span>
+      ),
       icon: Clock,
       gradient: "from-amber-400 to-orange-500",
       bg: "bg-amber-50",
@@ -304,8 +315,19 @@ export default function Dashboard() {
     },
     {
       title: "Delivered Stock",
-      value: deliveredStockQty + " Qty",
-      sub: `${deliveredStock.length} items · ${fmtShort(deliveredStockValue)} est.`,
+      value: (
+        <div className="flex items-baseline gap-1.5">
+          <span>{deliveredStockQty}</span>
+          <span className="text-lg text-slate-500 font-medium">Qty</span>
+        </div>
+      ),
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          <span className="font-semibold text-emerald-700">{fmtShort(deliveredStockValue)}</span> value
+          <span className="text-slate-300">&bull;</span>
+          {deliveredStock.length} items
+        </span>
+      ),
       icon: CheckCircle2,
       gradient: "from-emerald-400 to-teal-500",
       bg: "bg-emerald-50",
@@ -315,7 +337,11 @@ export default function Dashboard() {
     {
       title: "Pending Challans",
       value: pendingChallan.length,
-      sub: fmtShort(unbilledChallanValue) + " unbilled",
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          <span className="font-semibold text-rose-700">{fmtShort(unbilledChallanValue)}</span> unbilled value
+        </span>
+      ),
       icon: AlertCircle,
       gradient: "from-rose-400 to-pink-500",
       bg: "bg-rose-50",
@@ -325,7 +351,11 @@ export default function Dashboard() {
     {
       title: "Billed Challans",
       value: billedChallan.length,
-      sub: printedChallan.length + " printed",
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          <span className="font-semibold text-blue-700">{printedChallan.length}</span> printed
+        </span>
+      ),
       icon: Truck,
       gradient: "from-blue-400 to-indigo-500",
       bg: "bg-blue-50",
@@ -335,7 +365,11 @@ export default function Dashboard() {
     {
       title: "Total Billed",
       value: fmtShort(totalBilledAmount),
-      sub: filteredBills.length + " invoices",
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          <span className="font-semibold text-violet-700">{filteredBills.length}</span> invoices
+        </span>
+      ),
       icon: IndianRupee,
       gradient: "from-violet-400 to-purple-600",
       bg: "bg-violet-50",
@@ -345,7 +379,11 @@ export default function Dashboard() {
     {
       title: "Amount Paid",
       value: fmtShort(totalPaidAmount),
-      sub: fmtShort(totalUnpaidAmount) + " outstanding",
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          <span className="font-semibold text-green-700">{fmtShort(totalUnpaidAmount)}</span> outstanding
+        </span>
+      ),
       icon: TrendingUp,
       gradient: "from-green-400 to-emerald-600",
       bg: "bg-green-50",
@@ -355,7 +393,11 @@ export default function Dashboard() {
     {
       title: "Total Profit",
       value: fmtShort(totalProfit),
-      sub: "Across all stock",
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          Across all stock items
+        </span>
+      ),
       icon: TrendingUp,
       gradient: "from-teal-400 to-cyan-500",
       bg: "bg-teal-50",
@@ -365,7 +407,11 @@ export default function Dashboard() {
     {
       title: "Pending Profit",
       value: fmtShort(pendingProfit),
-      sub: "From pending stock",
+      sub: (
+        <span className="flex items-center gap-1.5 text-slate-500">
+          From pending stock
+        </span>
+      ),
       icon: Clock,
       gradient: "from-blue-400 to-sky-500",
       bg: "bg-sky-50",

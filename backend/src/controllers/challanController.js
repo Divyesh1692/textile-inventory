@@ -113,8 +113,7 @@ exports.updateChallan = async (req, res) => {
     const { id } = req.params;
     const { partyId, firmId, deliveryDate, items } = req.body;
 
-    const challan = await Challan.findOne({ _id: id,
- });
+    const challan = await Challan.findOne({ _id: id });
     if (!challan) return res.status(404).json({ message: "Challan not found" });
 
     if (challan.status === "Billed") {
@@ -173,8 +172,7 @@ exports.updateChallan = async (req, res) => {
 exports.markChallanPrinted = async (req, res) => {
   try {
     const { id } = req.params;
-    const challan = await Challan.findOne({ _id: id,
- });
+    const challan = await Challan.findOne({ _id: id });
     if (!challan) return res.status(404).json({ message: "Challan not found" });
 
     // Only mark as Printed if not already Billed
@@ -193,8 +191,7 @@ exports.markChallanPrinted = async (req, res) => {
 
 exports.getNextChallanNumber = async (req, res) => {
   try {
-    const lastChallan = await Challan.findOne({
- }).sort({ createdAt: -1 });
+    const lastChallan = await Challan.findOne({}).sort({ createdAt: -1 });
     let nextNum = 1;
     if (lastChallan && lastChallan.challanNumber) {
       const match = lastChallan.challanNumber.match(/\d+$/);
@@ -214,8 +211,7 @@ exports.getNextChallanNumber = async (req, res) => {
 
 exports.getChallans = async (req, res) => {
   try {
-    const challans = await Challan.find({
- })
+    const challans = await Challan.find({})
       .populate("partyId", "name")
       .populate("firmId", "name")
       .populate("items.designId", "name rate photos")
@@ -232,8 +228,7 @@ exports.getChallans = async (req, res) => {
 
 exports.getChallanById = async (req, res) => {
   try {
-    const challan = await Challan.findOne({ _id: req.params.id,
- })
+    const challan = await Challan.findOne({ _id: req.params.id })
       .populate("partyId", "name")
       .populate("firmId", "name")
       .populate("items.designId", "name rate photos")
@@ -244,5 +239,31 @@ exports.getChallanById = async (req, res) => {
     res
       .status(500)
       .json({ message: "Server error fetching challan", error: error.message });
+  }
+};
+
+exports.deleteChallan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const challan = await Challan.findById(id);
+    if (!challan) return res.status(404).json({ message: "Challan not found" });
+
+    if (challan.status === "Billed") {
+      return res.status(400).json({ message: "Cannot delete a billed challan." });
+    }
+
+    // Restore old stock quantities first
+    for (const item of challan.items) {
+      await Stock.findByIdAndUpdate(item.stockId, {
+        status: "Pending",
+        $unset: { deliveryChallanNo: "", deliveryDate: "" },
+      });
+    }
+
+    await Challan.findByIdAndDelete(id);
+    res.status(200).json({ message: "Challan deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting challan:", error);
+    res.status(500).json({ message: "Server error deleting challan", error: error.message });
   }
 };

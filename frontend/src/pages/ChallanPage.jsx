@@ -370,6 +370,7 @@ export default function ChallanPage() {
   const [endDate, setEndDate] = useState("");
   const [firmFilter, setFirmFilter] = useState("");
   const [partyFilter, setPartyFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
@@ -380,6 +381,7 @@ export default function ChallanPage() {
     setEndDate("");
     setFirmFilter("");
     setPartyFilter("");
+    setStatusFilter("all");
     setCurrentPage(1);
   };
 
@@ -578,6 +580,22 @@ export default function ChallanPage() {
     }
   };
 
+  const handleDeleteChallan = async (challan) => {
+    if (challan.status === "Billed") {
+      alert("Cannot delete a billed challan.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this challan? Stock items will be reverted to Pending.")) return;
+
+    try {
+      await axios.delete(`/challan/delete/${challan._id}`);
+      await fetchData();
+    } catch (error) {
+      console.error("Error deleting challan:", error);
+      alert(error.response?.data?.message || "Failed to delete challan");
+    }
+  };
+
   // ── Print ──
   const handlePrint = async (challan) => {
     const win = printChallans([challan]);
@@ -666,7 +684,8 @@ export default function ChallanPage() {
         }
       }
     }
-    return searchMatch && firmMatch && partyMatch && dateMatch;
+    const statusMatch = statusFilter === "all" || s.status === statusFilter;
+    return searchMatch && firmMatch && partyMatch && dateMatch && statusMatch;
   });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -835,6 +854,25 @@ export default function ChallanPage() {
                 </select>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Status
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Printed">Printed</option>
+                  <option value="Billed">Billed</option>
+                </select>
+              </div>
+
               <div className="sm:col-span-2 lg:col-span-4 flex justify-end pt-2 border-t border-slate-100 mt-2">
                 <button
                   onClick={resetFilters}
@@ -963,12 +1001,20 @@ export default function ChallanPage() {
                             <Eye className="w-3.5 h-3.5" /> View
                           </button>
                           {challan.status !== "Billed" && (
-                            <button
-                              onClick={() => handleOpenEditForm(challan)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
-                            >
-                              <PencilIcon className="w-3.5 h-3.5" /> Edit
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleOpenEditForm(challan)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
+                              >
+                                <PencilIcon className="w-3.5 h-3.5" /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteChallan(challan)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors"
+                              >
+                                <TrashIcon className="w-3.5 h-3.5" /> Delete
+                              </button>
+                            </>
                           )}
                           <button
                             onClick={() => handlePrint(challan)}
@@ -1063,12 +1109,20 @@ export default function ChallanPage() {
                       <Eye className="w-3.5 h-3.5" /> View
                     </button>
                     {challan.status !== "Billed" && (
-                      <button
-                        onClick={() => handleOpenEditForm(challan)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
-                      >
-                        <PencilIcon className="w-3.5 h-3.5" /> Edit
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleOpenEditForm(challan)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
+                        >
+                          <PencilIcon className="w-3.5 h-3.5" /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteChallan(challan)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors"
+                        >
+                          <TrashIcon className="w-3.5 h-3.5" /> Delete
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => handlePrint(challan)}
