@@ -489,7 +489,7 @@ export default function StockPage() {
                           : "-"}
                       </td>
                       <td className="py-4 px-6">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-800 font-mono">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono">
                           {stock.challanNo || "-"}
                         </span>
                       </td>
@@ -515,7 +515,7 @@ export default function StockPage() {
                         </div>
                       </td>
                       <td className="py-4 px-6">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-800 font-mono">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100 font-mono">
                           {stock.chartNo || "-"}
                         </span>
                       </td>
@@ -583,7 +583,7 @@ export default function StockPage() {
           </div>
 
           {/* CARD VIEW (Mobile/Tablet) */}
-          <div className="lg:hidden divide-y divide-slate-100">
+          <div className="lg:hidden divide-y-2 divide-slate-200">
             {currentItems.length > 0 ? (
               currentItems.map((stock) => (
                 <div
@@ -610,10 +610,14 @@ export default function StockPage() {
                         <h3 className="font-semibold text-slate-900">
                           {stock.designId?.name || "Unknown"}
                         </h3>
-                        <p className="text-xs text-slate-500 font-mono">
-                          Challan: {stock.challanNo || "-"} | Chart:{" "}
-                          {stock.chartNo || "-"}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5 mb-1">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            CH: {stock.challanNo || "-"}
+                          </span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                            Chart: {stock.chartNo || "-"}
+                          </span>
+                        </div>
                         <div className="mt-1">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${stock.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
@@ -744,9 +748,10 @@ export default function StockPage() {
                         <button
                           type="button"
                           onClick={() => removeItemRow(index)}
-                          className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-rose-200 text-rose-600 rounded-full flex items-center justify-center hover:bg-rose-50 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+                          className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-rose-200 text-rose-600 rounded-full flex items-center justify-center hover:bg-rose-50 hover:text-rose-700 transition-all shadow-sm z-10"
+                          title="Remove item"
                         >
-                          &times;
+                          <span className="text-xl leading-none block -mt-0.5">&times;</span>
                         </button>
                       )}
                       
@@ -796,8 +801,8 @@ export default function StockPage() {
                       </div>
 
                       {/* Detail Row */}
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="col-span-4 space-y-1.5">
+                      <div className="grid grid-cols-2 md:grid-cols-12 gap-4 items-end">
+                        <div className="col-span-2 md:col-span-4 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Design *</label>
                           <select
                             value={item.designId}
@@ -809,7 +814,7 @@ export default function StockPage() {
                           </select>
                         </div>
 
-                        <div className="col-span-2 space-y-1.5">
+                        <div className="col-span-1 md:col-span-2 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Chart No *</label>
                           <input
                             type="text"
@@ -820,7 +825,7 @@ export default function StockPage() {
                           />
                         </div>
 
-                        <div className="col-span-2 space-y-1.5">
+                        <div className="col-span-1 md:col-span-2 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Qty *</label>
                           <input
                             type="number"
@@ -831,7 +836,7 @@ export default function StockPage() {
                           />
                         </div>
 
-                        <div className="col-span-2 space-y-1.5">
+                        <div className="col-span-1 md:col-span-2 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Rate</label>
                           <input
                             type="number"
@@ -842,7 +847,7 @@ export default function StockPage() {
                           />
                         </div>
 
-                        <div className="col-span-2 space-y-1.5">
+                        <div className="col-span-1 md:col-span-2 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Amount</label>
                           <div className="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-mono font-bold text-right">
                             ₹{item.qty && item.rate ? (item.qty * item.rate).toLocaleString("en-IN") : 0}
@@ -852,6 +857,16 @@ export default function StockPage() {
                     </div>
                   ))}
                 </div>
+
+                {!editStockId && (
+                  <button
+                    type="button"
+                    onClick={addItemRow}
+                    className="mt-6 px-4 py-2 text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors flex items-center gap-2 mx-auto shadow-sm"
+                  >
+                    <PlusIcon className="w-4 h-4" /> Add Another Item
+                  </button>
+                )}
               </div>
 
               <div className="sticky bottom-0 z-10 border-t border-slate-100 px-6 py-4 flex flex-col-reverse sm:flex-row justify-end gap-3 bg-slate-50/90 backdrop-blur-md rounded-b-2xl">

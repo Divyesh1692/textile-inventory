@@ -500,7 +500,7 @@ export default function ChallanPage() {
     newItems[index].stockPhoto = stock.designId?.photos?.[0] || null;
     newItems[index].qty = stock.qty;
     newItems[index].rate = stock.rate;
-    newItems[index].stockSearchText = `${stock.designId?.name || "Stock"} (Inward: ${stock.challanNo})`;
+    newItems[index].stockSearchText = `${stock.designId?.name || "Stock"} (Challan No: ${stock.challanNo})`;
     
     if (!newItems[index].firmId && stock.firmId) newItems[index].firmId = stock.firmId._id || stock.firmId;
     if (!newItems[index].partyId && stock.partyId) newItems[index].partyId = stock.partyId._id || stock.partyId;
@@ -953,8 +953,8 @@ export default function ChallanPage() {
                         )}
                       </td>
                       <td className="py-4 px-6">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-800 font-mono">
-                          {challan.challanNumber}
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono">
+                          CH: {challan.challanNumber}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-sm text-slate-900 font-medium">
@@ -963,10 +963,14 @@ export default function ChallanPage() {
                           .filter(Boolean)
                           .join(", ") || "-"}
                       </td>
-                      <td className="py-4 px-6 text-sm font-mono text-slate-600">
-                        {challan.items
-                          ?.map((i) => i.stockId?.chartNo || "-")
-                          .join(", ")}
+                      <td className="py-4 px-6">
+                        <div className="flex flex-wrap gap-1.5">
+                          {challan.items?.map((i, idx) => (
+                            <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100 font-mono">
+                              #{i.stockId?.chartNo || "-"}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                       <td className="py-4 px-6 text-sm text-slate-900 font-medium">
                         {challan.partyId?.name || "Unknown Party"}
@@ -1044,7 +1048,7 @@ export default function ChallanPage() {
           </div>
 
           {/* CARD VIEW (Mobile/Tablet) */}
-          <div className="lg:hidden divide-y divide-slate-100">
+          <div className="lg:hidden divide-y-2 divide-slate-200">
             {currentItems.length > 0 ? (
               currentItems.map((challan) => (
                 <div
@@ -1065,9 +1069,11 @@ export default function ChallanPage() {
                         <FileText className="h-5 w-5 text-slate-400" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-slate-900">
-                          {challan.challanNumber}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono">
+                            CH: {challan.challanNumber}
+                          </span>
+                        </div>
                         <p className="text-xs text-slate-500">
                           {new Date(challan.deliveryDate).toLocaleDateString(
                             "en-IN",
@@ -1082,6 +1088,16 @@ export default function ChallanPage() {
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100 mb-3">
+                    <div className="col-span-2 mb-1">
+                      <p className="text-xs text-slate-400 mb-1.5">Items & Charts</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {challan.items?.map((i, idx) => (
+                          <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                            {i.designId?.name || "Stock"} #{i.stockId?.chartNo || "-"}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                     <div>
                       <p className="text-xs text-slate-400">Firm / Party</p>
                       <p className="font-medium text-slate-700 truncate">
@@ -1363,7 +1379,8 @@ export default function ChallanPage() {
                         <button
                           type="button"
                           onClick={() => removeChallanRow(index)}
-                          className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-rose-200 text-rose-600 rounded-full flex items-center justify-center hover:bg-rose-50 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+                          className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-rose-200 text-rose-600 rounded-full flex items-center justify-center hover:bg-rose-50 hover:text-rose-700 transition-all shadow-sm z-10"
+                          title="Remove item"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1420,7 +1437,7 @@ export default function ChallanPage() {
                           <label className="text-xs font-semibold text-slate-600 uppercase">Search & Select Stock *</label>
                           <input
                             type="text"
-                            placeholder="Search by Design Name or Inward Challan..."
+                            placeholder="Search by Design Name or Challan No..."
                             value={item.stockSearchText}
                             onChange={(e) => {
                               handleItemChange(index, "stockSearchText", e.target.value);
@@ -1453,7 +1470,7 @@ export default function ChallanPage() {
                                       <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full">{s.qty} available</span>
                                     </div>
                                     <div className="text-xs text-slate-500 mt-1 flex gap-3">
-                                      <span>Inward: {s.challanNo}</span>
+                                      <span>Challan No: {s.challanNo}</span>
                                       <span>Firm: {s.firmId?.name}</span>
                                     </div>
                                   </div>
@@ -1497,6 +1514,16 @@ export default function ChallanPage() {
                     </div>
                   ))}
                 </div>
+
+                {!editId && (
+                  <button
+                    type="button"
+                    onClick={addChallanRow}
+                    className="mt-6 px-4 py-2 text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors flex items-center gap-2 mx-auto shadow-sm"
+                  >
+                    <PlusIcon className="w-4 h-4" /> Add Another Item
+                  </button>
+                )}
               </div>
 
               {/* Footer */}

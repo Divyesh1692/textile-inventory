@@ -872,7 +872,7 @@ const filtered = billList.filter((b) => {
           </div>
 
           {/* CARD VIEW (Mobile) */}
-          <div className="lg:hidden divide-y divide-slate-100">
+          <div className="lg:hidden divide-y-2 divide-slate-200">
             {currentItems.length > 0 ? (
               currentItems.map((bill) => (
                 <div
@@ -1070,9 +1070,11 @@ const filtered = billList.filter((b) => {
                     >
                       <FileText className="w-4 h-4 text-slate-400 shrink-0" />
                       <div className="flex-1">
-                        <p className="font-semibold text-slate-900 text-sm">
-                          {c.challanNumber || c}
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono">
+                            CH: {c.challanNumber || c}
+                          </span>
+                        </div>
                         {c.deliveryDate && (
                           <p className="text-xs text-slate-400">
                             {new Date(c.deliveryDate).toLocaleDateString(
@@ -1286,14 +1288,16 @@ const filtered = billList.filter((b) => {
                               />
                               <div className="flex-1 flex justify-between items-center flex-wrap gap-2">
                                 <div>
-                                  <p className="font-semibold text-slate-900 flex items-center gap-2">
-                                    {challan.challanNumber}
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono">
+                                      CH: {challan.challanNumber}
+                                    </span>
                                     <span
                                       className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${challan.status === "Printed" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
                                     >
                                       {challan.status}
                                     </span>
-                                  </p>
+                                  </div>
                                   <p className="text-xs text-slate-500">
                                     {new Date(
                                       challan.deliveryDate,

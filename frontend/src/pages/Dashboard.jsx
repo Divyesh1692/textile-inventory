@@ -59,6 +59,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   // ── Filters ──
+  const [showFilters, setShowFilters] = useState(false);
   const [firmFilter, setFirmFilter] = useState("");
   const [partyFilter, setPartyFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
@@ -301,7 +302,7 @@ export default function Dashboard() {
         </div>
       ),
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           <span className="font-semibold text-amber-700">{fmtShort(pendingStockValue)}</span> value
           <span className="text-slate-300">&bull;</span>
           {pendingStock.length} items
@@ -322,7 +323,7 @@ export default function Dashboard() {
         </div>
       ),
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           <span className="font-semibold text-emerald-700">{fmtShort(deliveredStockValue)}</span> value
           <span className="text-slate-300">&bull;</span>
           {deliveredStock.length} items
@@ -338,7 +339,7 @@ export default function Dashboard() {
       title: "Pending Challans",
       value: pendingChallan.length,
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           <span className="font-semibold text-rose-700">{fmtShort(unbilledChallanValue)}</span> unbilled value
         </span>
       ),
@@ -352,7 +353,7 @@ export default function Dashboard() {
       title: "Billed Challans",
       value: billedChallan.length,
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           <span className="font-semibold text-blue-700">{printedChallan.length}</span> printed
         </span>
       ),
@@ -366,7 +367,7 @@ export default function Dashboard() {
       title: "Total Billed",
       value: fmtShort(totalBilledAmount),
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           <span className="font-semibold text-violet-700">{filteredBills.length}</span> invoices
         </span>
       ),
@@ -380,7 +381,7 @@ export default function Dashboard() {
       title: "Amount Paid",
       value: fmtShort(totalPaidAmount),
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           <span className="font-semibold text-green-700">{fmtShort(totalUnpaidAmount)}</span> outstanding
         </span>
       ),
@@ -394,7 +395,7 @@ export default function Dashboard() {
       title: "Total Profit",
       value: fmtShort(totalProfit),
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           Across all stock items
         </span>
       ),
@@ -408,7 +409,7 @@ export default function Dashboard() {
       title: "Pending Profit",
       value: fmtShort(pendingProfit),
       sub: (
-        <span className="flex items-center gap-1.5 text-slate-500">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           From pending stock
         </span>
       ),
@@ -434,25 +435,42 @@ export default function Dashboard() {
               Live snapshot of your inventory, delivery & billing.
             </p>
           </div>
-          {hasFilter && (
-            <button
-              onClick={clearFilters}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
-            >
-              <X className="h-4 w-4" /> Clear Filters
-            </button>
-          )}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all shadow-sm ${showFilters ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
+          >
+            <Filter className={`h-4 w-4 ${showFilters ? "text-indigo-600" : "text-slate-400"}`} /> 
+            {showFilters ? "Hide Filters" : "Show Filters"}
+            {hasFilter && <span className="flex h-2 w-2 rounded-full bg-indigo-500 ml-1"></span>}
+          </button>
         </div>
 
         {/* ── Filters ── */}
-        <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-4 w-4 text-slate-400" />
-            <span className="text-sm font-semibold text-slate-700">
-              Filters
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {showFilters && (
+          <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm p-5 animate-in slide-in-from-top-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-slate-400" />
+                <span className="text-sm font-semibold text-slate-700">
+                  Dashboard Filters
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={clearFilters}
+                  className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors shadow-sm"
+                >
+                  Reset Filters
+                </button>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="px-3 py-1.5 text-sm font-medium text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100 rounded-lg transition-colors shadow-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <select
               value={firmFilter}
               onChange={(e) => setFirmFilter(e.target.value)}
@@ -517,10 +535,12 @@ export default function Dashboard() {
             />
           </div>
         </div>
+        )}
+
 
         {/* ── Stat Cards ── */}
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
@@ -529,7 +549,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {statCards.map((card, i) => {
               const Icon = card.icon;
               return (
@@ -820,9 +840,11 @@ export default function Dashboard() {
                       className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors"
                     >
                       <div>
-                        <p className="text-sm font-semibold text-slate-800">
-                          #{c.challanNumber}
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono">
+                            CH: {c.challanNumber}
+                          </span>
+                        </div>
                         <p className="text-xs text-slate-400">
                           {c.partyId?.name || "—"} ·{" "}
                           {new Date(
