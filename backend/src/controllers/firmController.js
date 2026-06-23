@@ -20,8 +20,7 @@ const createFirm = async (req, res) => {
 
 const getFirms = async (req, res) => {
   try {
-    const firms = await Firm.find({
- });
+    const firms = await Firm.find({}).sort({ createdAt: -1 });
     res.json(firms);
   } catch (err) {
     res.status(500).json({ message: "Server error" });

@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/solid";
 import {
+  FileText,
   Search,
   Package,
-  Box as BoxIcon,
-  FileText,
-  ArrowUpDown,
   Filter,
+  CheckCircle2,
+  Clock,
+  Printer,
+  X,
   Edit2,
   Trash2,
+  ArrowUpDown,
+  Box as BoxIcon,
 } from "lucide-react";
 import DashboardLayout from "../layout/DashboardLayout";
+import SearchableSelect from "../components/SearchableSelect";
 import axios from "../utils/axios";
 
 export default function StockPage() {
@@ -393,36 +398,24 @@ export default function StockPage() {
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Firm
                 </label>
-                <select
+                <SearchableSelect
+                  options={[{ value: "", label: "All Firms" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
                   value={firmFilter}
-                  onChange={(e) => { setFirmFilter(e.target.value); setCurrentPage(1); }}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                >
-                  <option value="">All Firms</option>
-                  {firms.map((f) => (
-                    <option key={f._id} value={f._id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => { setFirmFilter(val); setCurrentPage(1); }}
+                  placeholder="All Firms"
+                />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Party
                 </label>
-                <select
+                <SearchableSelect
+                  options={[{ value: "", label: "All Parties" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
                   value={partyFilter}
-                  onChange={(e) => { setPartyFilter(e.target.value); setCurrentPage(1); }}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                >
-                  <option value="">All Parties</option>
-                  {parties.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => { setPartyFilter(val); setCurrentPage(1); }}
+                  placeholder="All Parties"
+                />
               </div>
 
               <div className="sm:col-span-2 lg:col-span-4 flex justify-end pt-2 border-t border-slate-100 mt-2">
@@ -778,25 +771,21 @@ export default function StockPage() {
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Firm *</label>
-                          <select
+                          <SearchableSelect
+                            options={[{ value: "", label: "Select Firm" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
                             value={item.firmId}
-                            onChange={(e) => handleItemChange(index, "firmId", e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          >
-                            <option value="">Select Firm</option>
-                            {firms.map((f) => <option key={f._id} value={f._id}>{f.name}</option>)}
-                          </select>
+                            onChange={(val) => handleItemChange(index, "firmId", val)}
+                            placeholder="Select Firm"
+                          />
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Party *</label>
-                          <select
+                          <SearchableSelect
+                            options={[{ value: "", label: "Select Party" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
                             value={item.partyId}
-                            onChange={(e) => handleItemChange(index, "partyId", e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          >
-                            <option value="">Select Party</option>
-                            {parties.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
-                          </select>
+                            onChange={(val) => handleItemChange(index, "partyId", val)}
+                            placeholder="Select Party"
+                          />
                         </div>
                       </div>
 
@@ -804,14 +793,12 @@ export default function StockPage() {
                       <div className="grid grid-cols-2 md:grid-cols-12 gap-4 items-end">
                         <div className="col-span-2 md:col-span-4 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">Design *</label>
-                          <select
+                          <SearchableSelect
+                            options={[{ value: "", label: "Select Design" }, ...designs.map(d => ({ value: d._id, label: d.name }))]}
                             value={item.designId}
-                            onChange={(e) => handleItemChange(index, "designId", e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          >
-                            <option value="">Select Design</option>
-                            {designs.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
-                          </select>
+                            onChange={(val) => handleItemChange(index, "designId", val)}
+                            placeholder="Select Design"
+                          />
                         </div>
 
                         <div className="col-span-1 md:col-span-2 space-y-1.5">

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import DashboardLayout from "../layout/DashboardLayout";
 import axios from "../utils/axios";
+import SearchableSelect from "../components/SearchableSelect";
 import {
   Package,
   Truck,
@@ -471,54 +472,34 @@ export default function Dashboard() {
               </div>
             </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <select
+            <SearchableSelect
+              options={[{ value: "", label: "All Firms" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
               value={firmFilter}
-              onChange={(e) => setFirmFilter(e.target.value)}
-              className="col-span-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
-            >
-              <option value="">All Firms</option>
-              {firms.map((f) => (
-                <option key={f._id} value={f._id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={(val) => setFirmFilter(val)}
+              placeholder="All Firms"
+              className="col-span-1 sm:col-span-1"
+            />
+            <SearchableSelect
+              options={[{ value: "", label: "All Parties" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
               value={partyFilter}
-              onChange={(e) => setPartyFilter(e.target.value)}
-              className="col-span-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
-            >
-              <option value="">All Parties</option>
-              {parties.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={(val) => setPartyFilter(val)}
+              placeholder="All Parties"
+              className="col-span-1 sm:col-span-1"
+            />
+            <SearchableSelect
+              options={[{ value: "", label: "All Months" }, ...MONTHS.map((m, i) => ({ value: String(i), label: m }))]}
               value={monthFilter}
-              onChange={(e) => setMonthFilter(e.target.value)}
-              className="col-span-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
-            >
-              <option value="">All Months</option>
-              {MONTHS.map((m, i) => (
-                <option key={i} value={i}>
-                  {m}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={(val) => setMonthFilter(val)}
+              placeholder="All Months"
+              className="col-span-1 sm:col-span-1"
+            />
+            <SearchableSelect
+              options={[{ value: "", label: "All Years" }, ...years.map((y) => ({ value: String(y), label: String(y) }))]}
               value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
-              className="col-span-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
-            >
-              <option value="">All Years</option>
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setYearFilter(val)}
+              placeholder="All Years"
+              className="col-span-1 sm:col-span-1"
+            />
             <input
               type="date"
               value={dateFrom}

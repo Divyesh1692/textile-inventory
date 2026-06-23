@@ -116,7 +116,7 @@ const createDesign = async (req, res) => {
 
 const getDesigns = async (req, res) => {
   try {
-    const designs = await Design.find({});
+    const designs = await Design.find({}).sort({ createdAt: -1 });
     res.json(designs);
   } catch (err) {
     res.status(500).json({ message: "Server error" });

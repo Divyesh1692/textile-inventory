@@ -13,6 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import DashboardLayout from "../layout/DashboardLayout";
+import SearchableSelect from "../components/SearchableSelect";
 import axios from "../utils/axios";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -698,32 +699,24 @@ const filtered = billList.filter((b) => {
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Firm
                 </label>
-                <select
+                <SearchableSelect
+                  options={[{ value: "", label: "All Firms" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
                   value={firmFilter}
-                  onChange={(e) => {setFirmFilter(e.target.value); setCurrentPage(1);}}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="">All Firms</option>
-                  {firms.map((f) => (
-                    <option key={f._id} value={f._id}>{f.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => {setFirmFilter(val); setCurrentPage(1);}}
+                  placeholder="All Firms"
+                />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Party
                 </label>
-                <select
+                <SearchableSelect
+                  options={[{ value: "", label: "All Parties" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
                   value={partyFilter}
-                  onChange={(e) => {setPartyFilter(e.target.value); setCurrentPage(1);}}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="">All Parties</option>
-                  {parties.map((p) => (
-                    <option key={p._id} value={p._id}>{p.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => {setPartyFilter(val); setCurrentPage(1);}}
+                  placeholder="All Parties"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -1219,41 +1212,29 @@ const filtered = billList.filter((b) => {
                     <label className="text-sm font-medium text-slate-700">
                       Firm <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={[{ value: "", label: "Select Invoicing Firm" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
                       value={firmId}
-                      onChange={(e) => {
-                        setFirmId(e.target.value);
+                      onChange={(val) => {
+                        setFirmId(val);
                         setSelectedChallans([]);
                       }}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                    >
-                      <option value="">Select Invoicing Firm</option>
-                      {firms.map((f) => (
-                        <option key={f._id} value={f._id}>
-                          {f.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Select Invoicing Firm"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-slate-700">
                       Party (Customer) <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={[{ value: "", label: "Select Billed Party" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
                       value={partyId}
-                      onChange={(e) => {
-                        setPartyId(e.target.value);
+                      onChange={(val) => {
+                        setPartyId(val);
                         setSelectedChallans([]);
                       }}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                    >
-                      <option value="">Select Billed Party</option>
-                      {parties.map((p) => (
-                        <option key={p._id} value={p._id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Select Billed Party"
+                    />
                   </div>
                 </div>
 
