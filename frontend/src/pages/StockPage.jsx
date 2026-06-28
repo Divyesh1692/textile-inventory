@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PlusIcon } from "@heroicons/react/24/solid";
 import {
   FileText,
@@ -25,10 +26,19 @@ export default function StockPage() {
 
   // Form state
   const defaultDate = new Date().toISOString().split("T")[0];
-  const [items, setItems] = useState([{ 
-    date: defaultDate, challanNo: "", firmId: "", partyId: "", 
-    designId: "", chartNo: "", qty: "", rate: "" 
-  }]);
+  const [items, setItems] = useState([
+    {
+      date: defaultDate,
+      challanNo: "",
+      firmId: "",
+      partyId: "",
+      designId: "",
+      chartNo: "",
+      qty: "",
+      rate: "",
+      status: "Pending",
+    },
+  ]);
 
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -38,6 +48,9 @@ export default function StockPage() {
   const [firmFilter, setFirmFilter] = useState("");
   const [partyFilter, setPartyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("challanNo_desc");
+  const [selectedStocks, setSelectedStocks] = useState([]);
+  const navigate = useNavigate();
 
   const [stockList, setStockList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,34 +86,56 @@ export default function StockPage() {
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
-    
+
     if (field === "designId") {
       const selected = designs.find((d) => d._id === value);
-      newItems[index].rate = selected ? selected.rate ?? "" : "";
+      newItems[index].rate = selected ? (selected.rate ?? "") : "";
     }
     setItems(newItems);
   };
 
   const addItemRow = () => {
     const lastItem = items[items.length - 1];
-    setItems([...items, { 
-      date: lastItem?.date || defaultDate, 
-      challanNo: lastItem?.challanNo || "", 
-      firmId: lastItem?.firmId || "", 
-      partyId: lastItem?.partyId || "", 
-      designId: "", chartNo: "", qty: "", rate: "" 
-    }]);
+    setItems([
+      ...items,
+      {
+        date: lastItem?.date || defaultDate,
+        challanNo: lastItem?.challanNo || "",
+        firmId: lastItem?.firmId || "",
+        partyId: lastItem?.partyId || "",
+        designId: "",
+        chartNo: "",
+        qty: "",
+        rate: "",
+        status: "Pending",
+      },
+    ]);
   };
-  const removeItemRow = (index) => setItems(items.filter((_, i) => i !== index));
+  const removeItemRow = (index) =>
+    setItems(items.filter((_, i) => i !== index));
 
   const handleSubmit = async () => {
-    const validItems = items.filter(i => i.date && i.challanNo && i.firmId && i.partyId && i.designId && i.chartNo && i.qty);
+    const validItems = items.filter(
+      (i) =>
+        i.date &&
+        i.challanNo &&
+        i.firmId &&
+        i.partyId &&
+        i.designId &&
+        i.chartNo &&
+        i.qty,
+    );
     if (!validItems.length) {
-      alert("Please ensure all required fields are filled for at least one item.");
+      alert(
+        "Please ensure all required fields are filled for at least one item.",
+      );
       return;
     }
 
-    if (editStockId && !window.confirm("Are you sure you want to update this stock entry?")) {
+    if (
+      editStockId &&
+      !window.confirm("Are you sure you want to update this stock entry?")
+    ) {
       return;
     }
 
@@ -117,11 +152,17 @@ export default function StockPage() {
           Amount: Number(item.qty) * Number(item.rate),
           firmId: item.firmId,
           partyId: item.partyId,
+          status: item.status,
         };
         await axios.put(`/stock/${editStockId}`, payload);
       } else {
         const payload = {
-          items: validItems.map(i => ({ ...i, qty: Number(i.qty), rate: Number(i.rate) }))
+          items: validItems.map((i) => ({
+            ...i,
+            qty: Number(i.qty),
+            rate: Number(i.rate),
+            status: i.status,
+          })),
         };
         await axios.post("/stock/bulk", payload);
       }
@@ -135,16 +176,21 @@ export default function StockPage() {
 
   const handleEditClick = (stock) => {
     setEditStockId(stock._id);
-    setItems([{
-      date: stock.date ? new Date(stock.date).toISOString().split("T")[0] : "",
-      challanNo: stock.challanNo || "",
-      firmId: stock.firmId?._id || stock.firmId || "",
-      partyId: stock.partyId?._id || stock.partyId || "",
-      designId: stock.designId?._id || stock.designId || "",
-      chartNo: stock.chartNo || "",
-      qty: stock.qty || "",
-      rate: stock.rate || ""
-    }]);
+    setItems([
+      {
+        date: stock.date
+          ? new Date(stock.date).toISOString().split("T")[0]
+          : "",
+        challanNo: stock.challanNo || "",
+        firmId: stock.firmId?._id || stock.firmId || "",
+        partyId: stock.partyId?._id || stock.partyId || "",
+        designId: stock.designId?._id || stock.designId || "",
+        chartNo: stock.chartNo || "",
+        qty: stock.qty || "",
+        rate: stock.rate || "",
+        status: stock.status || "Pending",
+      },
+    ]);
     setShowAddForm(true);
   };
 
@@ -160,10 +206,40 @@ export default function StockPage() {
     }
   };
 
+  const handleStatusToggle = async (stock) => {
+    if (
+      window.confirm(
+        `Are you sure you want to change status from ${stock.status || "Pending"}?`,
+      )
+    ) {
+      try {
+        const newStatus =
+          stock.status === "Delivered" ? "Pending" : "Delivered";
+        await axios.put(`/stock/${stock._id}`, { status: newStatus });
+        fetchData();
+      } catch (error) {
+        console.error("Error updating status:", error);
+        alert("Failed to update status");
+      }
+    }
+  };
+
   const handleModalClose = () => {
     setShowAddForm(false);
     setEditStockId(null);
-    setItems([{ date: defaultDate, challanNo: "", firmId: "", partyId: "", designId: "", chartNo: "", qty: "", rate: "" }]);
+    setItems([
+      {
+        date: defaultDate,
+        challanNo: "",
+        firmId: "",
+        partyId: "",
+        designId: "",
+        chartNo: "",
+        qty: "",
+        rate: "",
+        status: "Pending",
+      },
+    ]);
   };
 
   const resetFilters = () => {
@@ -174,6 +250,7 @@ export default function StockPage() {
     setFirmFilter("");
     setPartyFilter("");
     setStatusFilter("all");
+    setSortBy("challanNo_desc");
     setCurrentPage(1);
   };
 
@@ -231,14 +308,56 @@ export default function StockPage() {
     }
 
     const statusMatch = statusFilter === "all" || s.status === statusFilter;
-    return matchesSearch && matchesFirm && matchesParty && matchesDate && statusMatch;
+    return (
+      matchesSearch && matchesFirm && matchesParty && matchesDate && statusMatch
+    );
+  });
+
+  filtered.sort((a, b) => {
+    if (sortBy === "challanNo_desc") {
+      const aVal = a.challanNo || "";
+      const bVal = b.challanNo || "";
+      return bVal.localeCompare(aVal, undefined, { numeric: true });
+    } else if (sortBy === "challanNo_asc") {
+      const aVal = a.challanNo || "";
+      const bVal = b.challanNo || "";
+      return aVal.localeCompare(bVal, undefined, { numeric: true });
+    } else if (sortBy === "date_desc") {
+      return new Date(b.date || 0) - new Date(a.date || 0);
+    } else if (sortBy === "date_asc") {
+      return new Date(a.date || 0) - new Date(b.date || 0);
+    }
+    return 0;
   });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const currentItems = filtered.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedStocks(currentItems);
+    } else {
+      setSelectedStocks([]);
+    }
+  };
+
+  const handleSelectRow = (stock) => {
+    setSelectedStocks((prev) => {
+      const exists = prev.find((s) => s._id === stock._id);
+      if (exists) {
+        return prev.filter((s) => s._id !== stock._id);
+      } else {
+        return [...prev, stock];
+      }
+    });
+  };
+
+  const handleGenerateChallan = () => {
+    navigate("/challan", { state: { selectedStocks } });
+  };
 
   return (
     <DashboardLayout>
@@ -254,16 +373,26 @@ export default function StockPage() {
               Manage and track your fabric inventory across firms.
             </p>
           </div>
-          <button
-            onClick={() => {
-              setShowAddForm(true);
-              setEditStockId(null);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-500 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 transition-all active:scale-95"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Add Stock
-          </button>
+          <div className="flex items-center gap-3">
+            {selectedStocks.length > 0 && (
+              <button
+                onClick={handleGenerateChallan}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 hover:shadow-md transition-all active:scale-95"
+              >
+                Generate Challan ({selectedStocks.length})
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setShowAddForm(true);
+                setEditStockId(null);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-500 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 transition-all active:scale-95"
+            >
+              <PlusIcon className="w-5 h-5" />
+              Add Stock
+            </button>
+          </div>
         </div>
 
         {/* Filters and Stats Strip */}
@@ -316,7 +445,10 @@ export default function StockPage() {
                 type="text"
                 placeholder="Search stock by design, party, firm..."
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-sm"
               />
             </div>
@@ -340,7 +472,10 @@ export default function StockPage() {
                 </label>
                 <select
                   value={timeFilter}
-                  onChange={(e) => { setTimeFilter(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setTimeFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                 >
                   <option value="all">All Time</option>
@@ -358,12 +493,34 @@ export default function StockPage() {
                 </label>
                 <select
                   value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                 >
                   <option value="all">All Statuses</option>
                   <option value="Pending">Pending</option>
                   <option value="Delivered">Delivered</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                >
+                  <option value="challanNo_desc">Challan No (Z-A)</option>
+                  <option value="challanNo_asc">Challan No (A-Z)</option>
+                  <option value="date_desc">Date (Newest)</option>
+                  <option value="date_asc">Date (Oldest)</option>
                 </select>
               </div>
 
@@ -377,7 +534,10 @@ export default function StockPage() {
                       type="date"
                       lang="en-GB"
                       value={startDate}
-                      onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                     />
                     <span className="text-slate-400 hidden sm:inline-block">
@@ -387,7 +547,10 @@ export default function StockPage() {
                       type="date"
                       lang="en-GB"
                       value={endDate}
-                      onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                     />
                   </div>
@@ -399,9 +562,15 @@ export default function StockPage() {
                   Firm
                 </label>
                 <SearchableSelect
-                  options={[{ value: "", label: "All Firms" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
+                  options={[
+                    { value: "", label: "All Firms" },
+                    ...firms.map((f) => ({ value: f._id, label: f.name })),
+                  ]}
                   value={firmFilter}
-                  onChange={(val) => { setFirmFilter(val); setCurrentPage(1); }}
+                  onChange={(val) => {
+                    setFirmFilter(val);
+                    setCurrentPage(1);
+                  }}
                   placeholder="All Firms"
                 />
               </div>
@@ -411,9 +580,15 @@ export default function StockPage() {
                   Party
                 </label>
                 <SearchableSelect
-                  options={[{ value: "", label: "All Parties" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
+                  options={[
+                    { value: "", label: "All Parties" },
+                    ...parties.map((p) => ({ value: p._id, label: p.name })),
+                  ]}
                   value={partyFilter}
-                  onChange={(val) => { setPartyFilter(val); setCurrentPage(1); }}
+                  onChange={(val) => {
+                    setPartyFilter(val);
+                    setCurrentPage(1);
+                  }}
                   placeholder="All Parties"
                 />
               </div>
@@ -434,6 +609,17 @@ export default function StockPage() {
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-100">
+                  <th className="py-4 px-6 w-12">
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                      onChange={handleSelectAll}
+                      checked={
+                        currentItems.length > 0 &&
+                        selectedStocks.length === currentItems.length
+                      }
+                    />
+                  </th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                     Date
                   </th>
@@ -476,6 +662,16 @@ export default function StockPage() {
                       key={stock._id}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
+                      <td className="py-4 px-6">
+                        <input
+                          type="checkbox"
+                          className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                          checked={selectedStocks.some(
+                            (s) => s._id === stock._id,
+                          )}
+                          onChange={() => handleSelectRow(stock)}
+                        />
+                      </td>
                       <td className="py-4 px-6 text-sm text-slate-700">
                         {stock.date
                           ? new Date(stock.date).toLocaleDateString("en-IN")
@@ -531,11 +727,17 @@ export default function StockPage() {
                         ₹{(stock.Amount || 0).toLocaleString()}
                       </td>
                       <td className="py-4 px-6 text-right text-sm font-bold text-emerald-600">
-                        ₹{((stock.rate - (stock.costing || stock.designId?.costing || 0)) * stock.qty).toLocaleString()}
+                        ₹
+                        {(
+                          (stock.rate -
+                            (stock.costing || stock.designId?.costing || 0)) *
+                          stock.qty
+                        ).toLocaleString()}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${stock.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
+                          onClick={() => handleStatusToggle(stock)}
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border cursor-pointer hover:opacity-80 transition-opacity ${stock.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
                         >
                           {stock.status || "Pending"}
                         </span>
@@ -560,7 +762,7 @@ export default function StockPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="py-16 text-center">
+                    <td colSpan="11" className="py-16 text-center">
                       <Package className="mx-auto h-12 w-12 text-slate-300 mb-3" />
                       <h3 className="text-lg font-medium text-slate-900">
                         No stock found
@@ -585,6 +787,14 @@ export default function StockPage() {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                        checked={selectedStocks.some(
+                          (s) => s._id === stock._id,
+                        )}
+                        onChange={() => handleSelectRow(stock)}
+                      />
                       <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                         {stock.designId?.photos?.[0] ? (
                           <img
@@ -613,7 +823,8 @@ export default function StockPage() {
                         </div>
                         <div className="mt-1">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${stock.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
+                            onClick={() => handleStatusToggle(stock)}
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer hover:opacity-80 transition-opacity ${stock.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
                           >
                             {stock.status || "Pending"}
                           </span>
@@ -625,7 +836,12 @@ export default function StockPage() {
                         ₹{(stock.Amount || 0).toLocaleString()}
                       </p>
                       <p className="text-xs text-emerald-600 font-semibold mb-1">
-                        Prof: ₹{((stock.rate - (stock.costing || stock.designId?.costing || 0)) * stock.qty).toLocaleString()}
+                        Prof: ₹
+                        {(
+                          (stock.rate -
+                            (stock.costing || stock.designId?.costing || 0)) *
+                          stock.qty
+                        ).toLocaleString()}
                       </p>
                       <p className="text-xs text-slate-500">
                         Qty: {stock.qty} × ₹{stock.rate}
@@ -676,6 +892,30 @@ export default function StockPage() {
               </div>
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-white rounded-b-2xl">
+              <span className="text-sm text-slate-500">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Overlay Upgrade */}
@@ -736,7 +976,10 @@ export default function StockPage() {
 
                 <div className="space-y-6">
                   {items.map((item, index) => (
-                    <div key={index} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group">
+                    <div
+                      key={index}
+                      className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group"
+                    >
                       {items.length > 1 && !editStockId && (
                         <button
                           type="button"
@@ -744,46 +987,80 @@ export default function StockPage() {
                           className="absolute -top-3 -right-3 w-8 h-8 bg-white border border-rose-200 text-rose-600 rounded-full flex items-center justify-center hover:bg-rose-50 hover:text-rose-700 transition-all shadow-sm z-10"
                           title="Remove item"
                         >
-                          <span className="text-xl leading-none block -mt-0.5">&times;</span>
+                          <span className="text-xl leading-none block -mt-0.5">
+                            &times;
+                          </span>
                         </button>
                       )}
-                      
+
                       {/* Header Row */}
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-slate-100">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Date *</label>
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Date *
+                          </label>
                           <input
                             type="date"
                             value={item.date}
-                            onChange={(e) => handleItemChange(index, "date", e.target.value)}
+                            onChange={(e) =>
+                              handleItemChange(index, "date", e.target.value)
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Challan No *</label>
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Challan No *
+                          </label>
                           <input
                             type="text"
                             placeholder="CH-001"
                             value={item.challanNo}
-                            onChange={(e) => handleItemChange(index, "challanNo", e.target.value)}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "challanNo",
+                                e.target.value,
+                              )
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Firm *</label>
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Firm *
+                          </label>
                           <SearchableSelect
-                            options={[{ value: "", label: "Select Firm" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
+                            options={[
+                              { value: "", label: "Select Firm" },
+                              ...firms.map((f) => ({
+                                value: f._id,
+                                label: f.name,
+                              })),
+                            ]}
                             value={item.firmId}
-                            onChange={(val) => handleItemChange(index, "firmId", val)}
+                            onChange={(val) =>
+                              handleItemChange(index, "firmId", val)
+                            }
                             placeholder="Select Firm"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Party *</label>
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Party *
+                          </label>
                           <SearchableSelect
-                            options={[{ value: "", label: "Select Party" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
+                            options={[
+                              { value: "", label: "Select Party" },
+                              ...parties.map((p) => ({
+                                value: p._id,
+                                label: p.name,
+                              })),
+                            ]}
                             value={item.partyId}
-                            onChange={(val) => handleItemChange(index, "partyId", val)}
+                            onChange={(val) =>
+                              handleItemChange(index, "partyId", val)
+                            }
                             placeholder="Select Party"
                           />
                         </div>
@@ -791,53 +1068,96 @@ export default function StockPage() {
 
                       {/* Detail Row */}
                       <div className="grid grid-cols-2 md:grid-cols-12 gap-4 items-end">
-                        <div className="col-span-2 md:col-span-4 space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Design *</label>
+                        <div className="col-span-2 md:col-span-3 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Design *
+                          </label>
                           <SearchableSelect
-                            options={[{ value: "", label: "Select Design" }, ...designs.map(d => ({ value: d._id, label: d.name }))]}
+                            options={[
+                              { value: "", label: "Select Design" },
+                              ...designs.map((d) => ({
+                                value: d._id,
+                                label: d.name,
+                              })),
+                            ]}
                             value={item.designId}
-                            onChange={(val) => handleItemChange(index, "designId", val)}
+                            onChange={(val) =>
+                              handleItemChange(index, "designId", val)
+                            }
                             placeholder="Select Design"
                           />
                         </div>
 
                         <div className="col-span-1 md:col-span-2 space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Chart No *</label>
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Chart No *
+                          </label>
                           <input
                             type="text"
                             placeholder="C-100"
                             value={item.chartNo}
-                            onChange={(e) => handleItemChange(index, "chartNo", e.target.value)}
+                            onChange={(e) =>
+                              handleItemChange(index, "chartNo", e.target.value)
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
                           />
                         </div>
 
                         <div className="col-span-1 md:col-span-2 space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Qty *</label>
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Qty *
+                          </label>
                           <input
                             type="number"
                             placeholder="0"
                             value={item.qty}
-                            onChange={(e) => handleItemChange(index, "qty", e.target.value)}
+                            onChange={(e) =>
+                              handleItemChange(index, "qty", e.target.value)
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
                           />
                         </div>
 
-                        <div className="col-span-1 md:col-span-2 space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Rate</label>
+                        <div className="col-span-1 md:col-span-1 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Rate
+                          </label>
                           <input
                             type="number"
                             placeholder="0.00"
                             value={item.rate}
-                            onChange={(e) => handleItemChange(index, "rate", e.target.value)}
+                            onChange={(e) =>
+                              handleItemChange(index, "rate", e.target.value)
+                            }
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-mono"
                           />
                         </div>
 
                         <div className="col-span-1 md:col-span-2 space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">Amount</label>
-                          <div className="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-mono font-bold text-right">
-                            ₹{item.qty && item.rate ? (item.qty * item.rate).toLocaleString("en-IN") : 0}
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Status
+                          </label>
+                          <select
+                            value={item.status}
+                            onChange={(e) =>
+                              handleItemChange(index, "status", e.target.value)
+                            }
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
+                        </div>
+
+                        <div className="col-span-1 md:col-span-2 space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Amount
+                          </label>
+                          <div className="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-mono font-bold text-right truncate">
+                            ₹
+                            {item.qty && item.rate
+                              ? (item.qty * item.rate).toLocaleString("en-IN")
+                              : 0}
                           </div>
                         </div>
                       </div>
@@ -866,7 +1186,18 @@ export default function StockPage() {
                 <button
                   onClick={handleSubmit}
                   className="w-full sm:w-auto px-6 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  disabled={items.filter(i => i.date && i.challanNo && i.firmId && i.partyId && i.designId && i.chartNo && i.qty).length === 0}
+                  disabled={
+                    items.filter(
+                      (i) =>
+                        i.date &&
+                        i.challanNo &&
+                        i.firmId &&
+                        i.partyId &&
+                        i.designId &&
+                        i.chartNo &&
+                        i.qty,
+                    ).length === 0
+                  }
                 >
                   {editStockId
                     ? "Confirm & Update Stock"

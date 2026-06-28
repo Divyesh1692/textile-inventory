@@ -216,7 +216,7 @@ exports.getChallans = async (req, res) => {
       .populate("firmId", "name")
       .populate("items.designId", "name rate photos")
       .populate("items.stockId", "challanNo chartNo date")
-      .sort({ createdAt: -1 });
+      .sort({ deliveryDate: -1, challanNumber: -1, createdAt: -1 });
     res.status(200).json(challans);
   } catch (error) {
     res.status(500).json({

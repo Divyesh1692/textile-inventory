@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { PlusIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/solid";
+import { useLocation } from "react-router-dom";
 import {
   FileText,
   Search,
@@ -373,6 +374,8 @@ const printChallans = (challansArray) => {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function ChallanPage() {
+  const location = useLocation();
+
   // ── List/search state ──
   const [search, setSearch] = useState("");
   const [challanList, setChallanList] = useState([]);
@@ -463,7 +466,33 @@ export default function ChallanPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData().then(() => {
+      if (location.state?.selectedStocks && location.state.selectedStocks.length > 0) {
+        const stocks = location.state.selectedStocks;
+        
+        axios.get("/challan/get-next-number").then(res => {
+          const nextNum = res.data.nextChallanNumber;
+          const prefilledItems = stocks.map((s) => ({
+            deliveryDate: new Date().toISOString().split("T")[0],
+            challanNumber: nextNum || "",
+            firmId: s.firmId?._id || s.firmId || "",
+            partyId: s.partyId?._id || s.partyId || "",
+            stockId: s._id,
+            designId: s.designId?._id || s.designId || "",
+            designName: s.designId?.name || "",
+            stockPhoto: s.designId?.photos?.[0] || null,
+            qty: s.qty || "",
+            rate: s.rate || "",
+            stockSearchText: `${s.designId?.name || "Stock"} (Qty: ${s.qty}, Chart No: ${s.chartNo || "-"})`,
+          }));
+          setItems(prefilledItems);
+          setEditId(null);
+          setShowForm(true);
+          // clear state so it doesn't reopen on refresh
+          window.history.replaceState({}, document.title);
+        }).catch(err => console.error(err));
+      }
+    });
   }, []);
 
   const fetchNextChallanNumber = async () => {
@@ -526,7 +555,7 @@ export default function ChallanPage() {
         stockPhoto: item.designId?.photos?.[0] || null,
         rate: item.rate || "",
         qty: item.qty || "",
-        stockSearchText: `${item.designId?.name || "Stock"} (Qty: ${item.qty})`,
+        stockSearchText: `${item.designId?.name || "Stock"} (Qty: ${item.qty}, Chart No: ${item.stockId?.chartNo || "-"})`,
       },
     ]);
     setActiveDropdownIndex(null);
@@ -549,7 +578,7 @@ export default function ChallanPage() {
     newItems[index].qty = stock.qty;
     newItems[index].rate = stock.rate;
     newItems[index].stockSearchText =
-      `${stock.designId?.name || "Stock"} (Challan No: ${stock.challanNo})`;
+      `${stock.designId?.name || "Stock"} (Challan No: ${stock.challanNo}, Chart No: ${stock.chartNo || "-"})`;
 
     if (!newItems[index].firmId && stock.firmId)
       newItems[index].firmId = stock.firmId._id || stock.firmId;
@@ -1595,6 +1624,13 @@ export default function ChallanPage() {
                                       (
                                         item.stockSearchText || ""
                                       ).toLowerCase(),
+                                    ) ||
+                                  s.chartNo
+                                    ?.toLowerCase()
+                                    .includes(
+                                      (
+                                        item.stockSearchText || ""
+                                      ).toLowerCase(),
                                     ),
                               ).length > 0 ? (
                                 stockList
@@ -1608,6 +1644,13 @@ export default function ChallanPage() {
                                           ).toLowerCase(),
                                         ) ||
                                       s.challanNo
+                                        ?.toLowerCase()
+                                        .includes(
+                                          (
+                                            item.stockSearchText || ""
+                                          ).toLowerCase(),
+                                        ) ||
+                                      s.chartNo
                                         ?.toLowerCase()
                                         .includes(
                                           (
@@ -1634,6 +1677,7 @@ export default function ChallanPage() {
                                       </div>
                                       <div className="text-xs text-slate-500 mt-1 flex gap-3">
                                         <span>Challan No: {s.challanNo}</span>
+                                        <span>Chart No: {s.chartNo || "-"}</span>
                                         <span>Firm: {s.firmId?.name}</span>
                                       </div>
                                     </div>

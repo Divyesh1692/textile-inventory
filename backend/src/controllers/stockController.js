@@ -13,6 +13,7 @@ exports.createStock = async (req, res) => {
       qty,
       rate,
       Amount,
+      status,
     } = req.body;
 
     const design = await Design.findById(designId);
@@ -29,6 +30,7 @@ exports.createStock = async (req, res) => {
       rate,
       costing,
       Amount,
+      status: status || "Pending",
     });
 
     await stock.save();
@@ -63,6 +65,7 @@ exports.createBulkStock = async (req, res) => {
       rate: item.rate,
       costing: designMap[item.designId.toString()] || 0,
       Amount: item.qty * item.rate,
+      status: item.status || "Pending",
     }));
 
     const stocks = await Stock.insertMany(stockDocuments);
@@ -80,7 +83,7 @@ exports.getStocks = async (req, res) => {
       .populate("designId")
       .populate("firmId")
       .populate("partyId")
-      .sort({ createdAt: -1 });
+      .sort({ date: -1, challanNo: -1, createdAt: -1 });
 
     res.json(stocks);
   } catch (err) {
