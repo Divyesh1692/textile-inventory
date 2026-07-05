@@ -755,6 +755,7 @@ export default function ChallanPage() {
       c.items?.some(
         (i) =>
           i.designId?.name?.toLowerCase().includes(term) ||
+          i.designId?.shortcode?.toLowerCase().includes(term) ||
           i.stockId?.chartNo?.toLowerCase().includes(term),
       );
 
@@ -842,7 +843,7 @@ export default function ChallanPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by Challan Number, Party..."
+                placeholder="Search by Challan Number, Party, Design, Shortcode..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);

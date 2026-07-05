@@ -20,6 +20,8 @@ import {
   X,
   ArrowUpRight,
   Layers,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 const fmt = (n) =>
@@ -58,6 +60,7 @@ export default function Dashboard() {
   const [firms, setFirms] = useState([]);
   const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showProfit, setShowProfit] = useState(false);
 
   // ── Filters ──
   const [showFilters, setShowFilters] = useState(false);
@@ -393,8 +396,15 @@ export default function Dashboard() {
       border: "border-green-100",
     },
     {
-      title: "Total Profit",
-      value: fmtShort(totalProfit),
+      title: (
+        <div className="flex items-center gap-2">
+          Total Profit
+          <button onClick={(e) => { e.stopPropagation(); setShowProfit(!showProfit); }} className="text-slate-400 hover:text-slate-600 transition-colors">
+            {showProfit ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      ),
+      value: showProfit ? fmtShort(totalProfit) : "****",
       sub: (
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           Across all stock items
@@ -407,8 +417,15 @@ export default function Dashboard() {
       border: "border-teal-100",
     },
     {
-      title: "Pending Profit",
-      value: fmtShort(pendingProfit),
+      title: (
+        <div className="flex items-center gap-2">
+          Pending Profit
+          <button onClick={(e) => { e.stopPropagation(); setShowProfit(!showProfit); }} className="text-slate-400 hover:text-slate-600 transition-colors">
+            {showProfit ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      ),
+      value: showProfit ? fmtShort(pendingProfit) : "****",
       sub: (
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
           From pending stock

@@ -259,7 +259,7 @@ exports.getBills = async (req, res) => {
         populate: [
           { path: "partyId", select: "name" },
           { path: "firmId", select: "name" },
-          { path: "items.designId", select: "name rate" },
+          { path: "items.designId", select: "name rate shortcode" },
         ],
       })
       .sort({ createdAt: -1 });
@@ -282,7 +282,7 @@ exports.getBillById = async (req, res) => {
         populate: [
           { path: "partyId", select: "name" },
           { path: "firmId", select: "name" },
-          { path: "items.designId", select: "name rate" },
+          { path: "items.designId", select: "name rate shortcode" },
         ],
       });
     if (!bill) return res.status(404).json({ message: "Bill not found" });

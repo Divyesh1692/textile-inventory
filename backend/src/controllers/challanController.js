@@ -214,7 +214,7 @@ exports.getChallans = async (req, res) => {
     const challans = await Challan.find({})
       .populate("partyId", "name")
       .populate("firmId", "name")
-      .populate("items.designId", "name rate photos")
+      .populate("items.designId", "name rate photos shortcode")
       .populate("items.stockId", "challanNo chartNo date")
       .sort({ deliveryDate: -1, challanNumber: -1, createdAt: -1 });
     res.status(200).json(challans);
@@ -231,7 +231,7 @@ exports.getChallanById = async (req, res) => {
     const challan = await Challan.findOne({ _id: req.params.id })
       .populate("partyId", "name")
       .populate("firmId", "name")
-      .populate("items.designId", "name rate photos")
+      .populate("items.designId", "name rate photos shortcode")
       .populate("items.stockId", "challanNo chartNo date");
     if (!challan) return res.status(404).json({ message: "Challan not found" });
     res.status(200).json(challan);

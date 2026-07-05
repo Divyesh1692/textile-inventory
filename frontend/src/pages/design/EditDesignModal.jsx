@@ -17,10 +17,15 @@ import axios from "../../utils/axios";
 export default function EditDesignModal({ design, onClose }) {
   const [form, setForm] = useState({
     name: "",
+    shortcode: "",
     description: "",
     oldRate: "",
     rate: "",
     costing: "",
+    diamonds: "",
+    jarkan: "",
+    panching: "",
+    gala: "",
     photos: [], // files to add
     keepPhotos: [], // existing urls
   });
@@ -31,10 +36,15 @@ export default function EditDesignModal({ design, onClose }) {
     if (!design) return;
     setForm({
       name: design.name || "",
+      shortcode: design.shortcode || "",
       description: design.description || "",
       oldRate: design.oldRate ?? "",
       rate: design.rate ?? "",
       costing: design.costing ?? "",
+      diamonds: design.diamonds ?? "",
+      jarkan: design.jarkan ?? "",
+      panching: design.panching ?? "",
+      gala: design.gala ?? "",
       photos: [],
       keepPhotos: design.photos || [],
     });
@@ -65,10 +75,15 @@ export default function EditDesignModal({ design, onClose }) {
 
     const fd = new FormData();
     fd.append("name", form.name);
+    fd.append("shortcode", form.shortcode || "");
     fd.append("description", form.description || "");
     fd.append("oldRate", form.oldRate || 0);
     fd.append("rate", form.rate || 0);
     fd.append("costing", form.costing || 0);
+    fd.append("diamonds", form.diamonds || 0);
+    fd.append("jarkan", form.jarkan || 0);
+    fd.append("panching", form.panching || 0);
+    fd.append("gala", form.gala || 0);
 
     // keep existing photos as JSON array so backend won't delete them
     fd.append("keepPhotos", JSON.stringify(form.keepPhotos || []));
@@ -104,13 +119,23 @@ export default function EditDesignModal({ design, onClose }) {
         </div>
 
         <div className="space-y-3">
-          <div>
-            <label className="block text-sm">Name</label>
-            <input
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm">Name</label>
+              <input
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm">Shortcode</label>
+              <input
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                value={form.shortcode}
+                onChange={(e) => setForm({ ...form, shortcode: e.target.value })}
+              />
+            </div>
           </div>
 
           <div>
@@ -145,6 +170,37 @@ export default function EditDesignModal({ design, onClose }) {
               type="number"
               value={form.costing}
               onChange={(e) => setForm({ ...form, costing: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <input
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+              placeholder="Diamonds"
+              type="number"
+              value={form.diamonds}
+              onChange={(e) => setForm({ ...form, diamonds: e.target.value })}
+            />
+            <input
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+              placeholder="Jarkan"
+              type="number"
+              value={form.jarkan}
+              onChange={(e) => setForm({ ...form, jarkan: e.target.value })}
+            />
+            <input
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+              placeholder="Panching"
+              type="number"
+              value={form.panching}
+              onChange={(e) => setForm({ ...form, panching: e.target.value })}
+            />
+            <input
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+              placeholder="Gala"
+              type="number"
+              value={form.gala}
+              onChange={(e) => setForm({ ...form, gala: e.target.value })}
             />
           </div>
 

@@ -14,13 +14,13 @@ import axios from "../../utils/axios";
  */
 export default function BulkDesignModal({ onClose }) {
   const [rows, setRows] = useState([
-    { name: "", oldRate: "", rate: "", costing: "", photos: [] },
+    { name: "", shortcode: "", oldRate: "", rate: "", costing: "", diamonds: "", jarkan: "", panching: "", gala: "", photos: [] },
   ]);
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
   const addRow = () =>
-    setRows([...rows, { name: "", oldRate: "", rate: "", costing: "", photos: [] }]);
+    setRows([...rows, { name: "", shortcode: "", oldRate: "", rate: "", costing: "", diamonds: "", jarkan: "", panching: "", gala: "", photos: [] }]);
   const removeRow = (i) => setRows(rows.filter((_, idx) => idx !== i));
   const change = (i, field, value) => {
     const u = [...rows];
@@ -48,9 +48,14 @@ export default function BulkDesignModal({ onClose }) {
       const formData = new FormData();
       rows.forEach((r, idx) => {
         formData.append(`designs[${idx}][name]`, r.name);
+        formData.append(`designs[${idx}][shortcode]`, r.shortcode || "");
         formData.append(`designs[${idx}][oldRate]`, r.oldRate || 0);
         formData.append(`designs[${idx}][rate]`, r.rate || 0);
         formData.append(`designs[${idx}][costing]`, r.costing || 0);
+        formData.append(`designs[${idx}][diamonds]`, r.diamonds || 0);
+        formData.append(`designs[${idx}][jarkan]`, r.jarkan || 0);
+        formData.append(`designs[${idx}][panching]`, r.panching || 0);
+        formData.append(`designs[${idx}][gala]`, r.gala || 0);
 
         (r.photos || []).forEach((file) => {
           formData.append(`designs[${idx}][photos]`, file);
@@ -91,12 +96,18 @@ export default function BulkDesignModal({ onClose }) {
                 </button>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
                 <input
                   className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
                   placeholder="Design name"
                   value={r.name}
                   onChange={(e) => change(i, "name", e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                  placeholder="Shortcode"
+                  value={r.shortcode}
+                  onChange={(e) => change(i, "shortcode", e.target.value)}
                 />
                 <input
                   className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
@@ -118,6 +129,37 @@ export default function BulkDesignModal({ onClose }) {
                   type="number"
                   value={r.costing}
                   onChange={(e) => change(i, "costing", e.target.value)}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                <input
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                  placeholder="Diamonds"
+                  type="number"
+                  value={r.diamonds}
+                  onChange={(e) => change(i, "diamonds", e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                  placeholder="Jarkan"
+                  type="number"
+                  value={r.jarkan}
+                  onChange={(e) => change(i, "jarkan", e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                  placeholder="Panching"
+                  type="number"
+                  value={r.panching}
+                  onChange={(e) => change(i, "panching", e.target.value)}
+                />
+                <input
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                  placeholder="Gala"
+                  type="number"
+                  value={r.gala}
+                  onChange={(e) => change(i, "gala", e.target.value)}
                 />
               </div>
 

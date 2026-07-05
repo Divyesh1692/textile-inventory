@@ -61,9 +61,14 @@ const createDesign = async (req, res) => {
         }
         const design = new Design({
           name: d.name,
+          shortcode: d.shortcode || "",
           oldRate: d.oldRate || 0,
           rate: d.rate || 0,
           costing: d.costing || 0,
+          diamonds: d.diamonds || 0,
+          jarkan: d.jarkan || 0,
+          panching: d.panching || 0,
+          gala: d.gala || 0,
           photos,
         });
         await design.save();
@@ -84,6 +89,7 @@ const createDesign = async (req, res) => {
     // Fallback for single application/json creation
     const {
       name,
+      shortcode,
       description,
       quality,
       fabricType,
@@ -91,11 +97,16 @@ const createDesign = async (req, res) => {
       oldRate,
       rate,
       costing,
+      diamonds,
+      jarkan,
+      panching,
+      gala,
       photos,
     } = req.body;
 
     const design = new Design({
       name,
+      shortcode: shortcode || "",
       description,
       quality,
       fabricType,
@@ -103,6 +114,10 @@ const createDesign = async (req, res) => {
       oldRate,
       rate,
       costing: costing || 0,
+      diamonds: diamonds || 0,
+      jarkan: jarkan || 0,
+      panching: panching || 0,
+      gala: gala || 0,
       photos: photos || [],
     });
 
@@ -151,9 +166,14 @@ const updateDesign = async (req, res) => {
 
     const updateData = {
       name: req.body.name,
+      shortcode: req.body.shortcode || "",
       oldRate: req.body.oldRate || 0,
       rate: req.body.rate || 0,
       costing: req.body.costing || 0,
+      diamonds: req.body.diamonds || 0,
+      jarkan: req.body.jarkan || 0,
+      panching: req.body.panching || 0,
+      gala: req.body.gala || 0,
       photos,
     };
 

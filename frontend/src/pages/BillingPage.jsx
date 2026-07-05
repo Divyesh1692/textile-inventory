@@ -117,34 +117,34 @@ const printBill = (bill) => {
       <title>Invoice ${bill.billNumber}</title>
       <style>
         @media print {
-          @page { margin: 10mm; }
+          @page { size: A4; margin: 10mm; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 5px; color: #1e293b; font-size: 12px; background: #f8fafc; }
-        .container { border: 2px solid #4f46e5; width: 100%; max-width: 800px; margin: 0 auto; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 24px rgba(79,70,229,0.08); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 5px; color: #000; font-size: 12px; background: #fff; }
+        .container { border: 2px solid #000; width: 100%; max-width: 210mm; margin: 0 auto; background: #fff; box-sizing: border-box; }
         
         /* Header */
-        .header { text-align: center; position: relative; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #fff; padding-bottom: 0; }
-        .mo { position: absolute; top: 8px; right: 12px; font-weight: 700; font-size: 13px; color: #c7d2fe; letter-spacing: 0.5px; }
-        .firm-name { font-size: 26px; font-weight: 800; padding: 14px 0 4px; letter-spacing: 1px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-        .sub-header { border-top: 1px solid rgba(255,255,255,0.25); display: flex; justify-content: space-between; padding: 4px 12px; font-weight: 600; font-size: 11px; color: #c7d2fe; }
-        .address-strip { background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); color: #fff; padding: 5px 10px; font-weight: 700; font-size: 13px; text-align: center; border-top: 1px solid rgba(255,255,255,0.2); }
-        .id-strip { display: flex; justify-content: space-between; padding: 5px 12px; background: #312e81; color: #a5b4fc; font-weight: 700; font-size: 11px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .header { text-align: center; position: relative; background: #fff; color: #000; border-bottom: 2px solid #000; padding-bottom: 0; }
+        .mo { position: absolute; top: 8px; right: 12px; font-weight: 700; font-size: 13px; color: #000; letter-spacing: 0.5px; }
+        .firm-name { font-size: 26px; font-weight: 800; padding: 14px 0 4px; letter-spacing: 1px; color: #000; text-shadow: none; }
+        .sub-header { border-top: 1px solid #000; display: flex; justify-content: space-between; padding: 4px 12px; font-weight: 600; font-size: 11px; color: #000; }
+        .address-strip { border-top: 1px solid #000; padding: 5px 10px; font-weight: 700; font-size: 13px; text-align: center; color: #000; }
+        .id-strip { display: flex; justify-content: space-between; padding: 5px 12px; border-top: 1px solid #000; color: #000; font-weight: 700; font-size: 11px; }
 
         /* Party Info */
-        .party-info { display: grid; grid-template-columns: 1.5fr 1fr; border-bottom: 2px solid #e2e8f0; }
-        .party-left { padding: 10px 12px; border-right: 1px solid #e2e8f0; min-height: 90px; background: #fafafa; }
+        .party-info { display: grid; grid-template-columns: 1.5fr 1fr; border-bottom: 2px solid #000; }
+        .party-left { padding: 10px 12px; border-right: 2px solid #000; min-height: 90px; background: #fff; }
         .party-right { padding: 6px 12px; background: #fff; }
         .info-row { display: flex; margin-bottom: 6px; align-items: baseline; }
-        .info-row label { min-width: 90px; font-weight: 700; color: #4f46e5; font-size: 11px; }
-        .info-row span { border-bottom: 1px solid #c7d2fe; flex: 1; padding-left: 5px; font-size: 12px; color: #1e293b; }
+        .info-row label { min-width: 90px; font-weight: 700; color: #000; font-size: 11px; }
+        .info-row span { border-bottom: 1px dotted #000; flex: 1; padding-left: 5px; font-size: 12px; color: #000; }
 
         /* Items Table */
-        table { width: 100%; border-collapse: collapse; }
-        th { border: 1px solid #c7d2fe; padding: 7px 5px; font-size: 10px; text-transform: uppercase; background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; font-weight: 700; letter-spacing: 0.5px; }
-        td { border: 1px solid #e2e8f0; padding: 5px 7px; font-size: 11px; vertical-align: top; color: #334155; }
-        tbody tr:nth-child(even) td { background: #f8fafc; }
+        table { width: 100%; border-collapse: collapse; border-bottom: 2px solid #000; }
+        th { border: 1px solid #000; border-top: none; padding: 7px 5px; font-size: 10px; text-transform: uppercase; background: #fff; color: #000; font-weight: 700; letter-spacing: 0.5px; }
+        td { border: 1px solid #000; padding: 5px 7px; font-size: 11px; vertical-align: top; color: #000; }
+        tbody tr:nth-child(even) td { background: #fff; }
         .col-ch { width: 60px; text-align: center; }
         .col-desc { text-align: left; }
         .col-hsn { width: 60px; text-align: center; }
@@ -152,28 +152,28 @@ const printBill = (bill) => {
         .col-rate { width: 70px; text-align: right; }
         .col-amt { width: 105px; text-align: right; font-weight: 600; }
         
-        .empty-rows td { height: 24px; background: #fff !important; }
+        .empty-rows td { height: 24px; background: #fff !important; border-bottom: none; border-top: none; }
         
         /* Footer */
-        .footer { display: grid; grid-template-columns: 1.5fr 1fr; border-top: 2px solid #4f46e5; }
-        .footer-left { border-right: 1px solid #e2e8f0; background: #fafafa; }
-        .words-row { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; min-height: 38px; font-size: 11px; color: #475569; }
-        .words-row b { color: #4f46e5; }
-        .remark-row { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; min-height: 32px; font-size: 11px; color: #475569; }
-        .remark-row b { color: #4f46e5; }
-        .bank-details { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 10px; color: #475569; background: #eff6ff; }
-        .bank-details b { color: #1d4ed8; }
-        .terms { padding: 7px 10px; font-size: 9px; line-height: 1.5; color: #64748b; }
-        .terms b { color: #4f46e5; }
+        .footer { display: grid; grid-template-columns: 1.5fr 1fr; }
+        .footer-left { border-right: 2px solid #000; background: #fff; }
+        .words-row { padding: 8px 10px; border-bottom: 1px solid #000; min-height: 38px; font-size: 11px; color: #000; }
+        .words-row b { color: #000; }
+        .remark-row { padding: 8px 10px; border-bottom: 1px solid #000; min-height: 32px; font-size: 11px; color: #000; }
+        .remark-row b { color: #000; }
+        .bank-details { padding: 8px 10px; border-bottom: 1px solid #000; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 10px; color: #000; background: #fff; }
+        .bank-details b { color: #000; }
+        .terms { padding: 7px 10px; font-size: 9px; line-height: 1.5; color: #000; }
+        .terms b { color: #000; }
         
         .totals-table { width: 100%; }
-        .totals-table td { border: none; border-bottom: 1px solid #e2e8f0; padding: 5px 10px; font-size: 11px; color: #334155; }
-        .totals-table td:first-child { font-weight: 700; text-align: left; color: #475569; }
+        .totals-table td { border: none; border-bottom: 1px solid #000; padding: 5px 10px; font-size: 11px; color: #000; }
+        .totals-table td:first-child { font-weight: 700; text-align: left; color: #000; }
         .totals-table td:last-child { text-align: right; width: 110px; font-weight: 600; }
-        .totals-table tr:last-child td { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff !important; font-weight: 800; font-size: 13px; border-bottom: 0; }
+        .totals-table tr:last-child td { background: #fff; color: #000 !important; font-weight: 800; font-size: 13px; border-bottom: 0; }
 
-        .sign-area { border-top: 2px solid #4f46e5; padding: 8px 10px; text-align: center; font-size: 10px; min-height: 75px; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(135deg, #f0f9ff, #eff6ff); }
-        .sign-area p { color: #475569; font-size: 10px; margin-bottom: 30px; }
+        .sign-area { border-top: 2px solid #000; padding: 8px 10px; text-align: center; font-size: 10px; min-height: 75px; display: flex; flex-direction: column; justify-content: space-between; background: #fff; }
+        .sign-area p { color: #000; font-size: 10px; margin-bottom: 30px; }
       </style>
     </head>
     <body>
@@ -190,7 +190,7 @@ const printBill = (bill) => {
             ${firm.address || ""}
           </div>
           <div class="id-strip">
-            <span>GSTIN NO : ${firm.gst || ""}</span>
+            ${bill.isGst ? `<span>GSTIN NO : ${firm.gst || ""}</span>` : "<span></span>"}
             <span>${firm.pan ? "PAN : " + firm.pan : ""}</span>
           </div>
         </header>
@@ -199,7 +199,7 @@ const printBill = (bill) => {
           <div class="party-left">
             <div class="info-row"><label>M/S.</label><span>${party.name || "-"}</span></div>
             <div class="info-row"><label>Add.</label><span>${party.address || "-"}</span></div>
-            <div class="info-row"><label>Party GST NO.</label><span>${party.gst || "-"}</span></div>
+            ${bill.isGst ? `<div class="info-row"><label>Party GST NO.</label><span>${party.gst || "-"}</span></div>` : ""}
           </div>
           <div class="party-right">
             <div class="info-row"><label>Invoice No :</label><span>${bill.billNumber}</span></div>
@@ -261,7 +261,7 @@ const printBill = (bill) => {
 
         <div class="footer">
           <div class="footer-left">
-            <div class="words-row"><b>Amount Words:</b> ${numberToWords(bill.totalAmount)}</div>
+            <div class="words-row"><b>Amount Words:</b> ${numberToWords(Math.round(bill.totalAmount))}</div>
             <div class="remark-row"><b>Remark :</b> ${bill.status === "Paid" ? "PAID" : ""}</div>
             ${
               bill.isGst
@@ -290,7 +290,7 @@ const printBill = (bill) => {
           <div class="footer-right">
             <table class="totals-table">
               <tr><td>Gross Total</td><td>${fmt(bill.grossTotal)}</td></tr>
-              <tr><td>Discount (${bill.discountPct}%)</td><td>${fmt(bill.discountAmount)}</td></tr>
+              ${bill.discountAmount > 0 ? `<tr><td>Discount (${bill.discountPct}%)</td><td>- ${fmt(bill.discountAmount)}</td></tr>` : `<tr><td>Discount (${bill.discountPct}%)</td><td>${fmt(bill.discountAmount)}</td></tr>`}
               ${bill.isGst ? `<tr><td>Total Amount Before GST</td><td>${fmt(bill.amountBeforeGst)}</td></tr>` : ""}
               ${
                 bill.isGst
@@ -301,7 +301,7 @@ const printBill = (bill) => {
               `
                   : ""
               }
-              <tr><td>Total Amount After GST</td><td>${fmt(bill.totalAmount)}</td></tr>
+              <tr><td>${bill.isGst ? "Total Amount After GST" : "Total Amount"}</td><td>${Math.round(bill.totalAmount).toLocaleString("en-IN")}</td></tr>
             </table>
             <div class="sign-area">
                <p>Certtified that the perticulers given above return and correct.<br/>
@@ -557,7 +557,7 @@ export default function BillingPage() {
     }
   };
 
-const filtered = billList.filter((b) => {
+  const filtered = billList.filter((b) => {
     const term = search.toLowerCase();
     const searchMatch =
       b.billNumber?.toLowerCase().includes(term) ||
@@ -595,17 +595,20 @@ const filtered = billList.filter((b) => {
         }
       }
     }
-    const statusMatch = statusFilter === "all" || b.status === statusFilter || (statusFilter === "Unpaid" && !b.status);
+    const statusMatch =
+      statusFilter === "all" ||
+      b.status === statusFilter ||
+      (statusFilter === "Unpaid" && !b.status);
     return searchMatch && firmMatch && partyMatch && dateMatch && statusMatch;
   });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const currentItems = filtered.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
-    // ── Render ──
+  // ── Render ──
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6">
@@ -639,15 +642,21 @@ const filtered = billList.filter((b) => {
                 type="text"
                 placeholder="Search by Bill Number, Party..."
                 value={search}
-                onChange={(e) => {setSearch(e.target.value); setCurrentPage(1);}}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
               />
             </div>
-                        <button
+            <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium shadow-sm w-full sm:w-auto justify-center transition-colors ${showFilters ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}
             >
-              <Filter className={`w-4 h-4 ${showFilters ? "text-indigo-500" : "text-slate-400"}`} /> Filters
+              <Filter
+                className={`w-4 h-4 ${showFilters ? "text-indigo-500" : "text-slate-400"}`}
+              />{" "}
+              Filters
             </button>
           </div>
 
@@ -660,7 +669,10 @@ const filtered = billList.filter((b) => {
                 </label>
                 <select
                   value={timeFilter}
-                  onChange={(e) => {setTimeFilter(e.target.value); setCurrentPage(1);}}
+                  onChange={(e) => {
+                    setTimeFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 >
                   <option value="all">All Time</option>
@@ -681,14 +693,22 @@ const filtered = billList.filter((b) => {
                     <input
                       type="date"
                       value={startDate}
-                      onChange={(e) => {setStartDate(e.target.value); setCurrentPage(1);}}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
-                    <span className="text-slate-400 hidden sm:inline-block">to</span>
+                    <span className="text-slate-400 hidden sm:inline-block">
+                      to
+                    </span>
                     <input
                       type="date"
                       value={endDate}
-                      onChange={(e) => {setEndDate(e.target.value); setCurrentPage(1);}}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setCurrentPage(1);
+                      }}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
                   </div>
@@ -700,9 +720,15 @@ const filtered = billList.filter((b) => {
                   Firm
                 </label>
                 <SearchableSelect
-                  options={[{ value: "", label: "All Firms" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
+                  options={[
+                    { value: "", label: "All Firms" },
+                    ...firms.map((f) => ({ value: f._id, label: f.name })),
+                  ]}
                   value={firmFilter}
-                  onChange={(val) => {setFirmFilter(val); setCurrentPage(1);}}
+                  onChange={(val) => {
+                    setFirmFilter(val);
+                    setCurrentPage(1);
+                  }}
                   placeholder="All Firms"
                 />
               </div>
@@ -712,9 +738,15 @@ const filtered = billList.filter((b) => {
                   Party
                 </label>
                 <SearchableSelect
-                  options={[{ value: "", label: "All Parties" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
+                  options={[
+                    { value: "", label: "All Parties" },
+                    ...parties.map((p) => ({ value: p._id, label: p.name })),
+                  ]}
                   value={partyFilter}
-                  onChange={(val) => {setPartyFilter(val); setCurrentPage(1);}}
+                  onChange={(val) => {
+                    setPartyFilter(val);
+                    setCurrentPage(1);
+                  }}
                   placeholder="All Parties"
                 />
               </div>
@@ -725,7 +757,10 @@ const filtered = billList.filter((b) => {
                 </label>
                 <select
                   value={statusFilter}
-                  onChange={(e) => {setStatusFilter(e.target.value); setCurrentPage(1);}}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 >
                   <option value="all">All Statuses</option>
@@ -745,21 +780,36 @@ const filtered = billList.filter((b) => {
               </div>
             </div>
           )}
-          
 
           {/* TABLE (Desktop) */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-100">
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Bill No</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Party</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Firm</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">GST</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Total Amount</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Actions</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Bill No
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Party
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Firm
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">
+                    GST
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                    Total Amount
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">
+                    Status
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -950,7 +1000,7 @@ const filtered = billList.filter((b) => {
               </div>
             )}
           </div>
-        
+
           {totalPages > 1 && (
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-white rounded-b-2xl">
               <span className="text-sm text-slate-500">
@@ -959,14 +1009,14 @@ const filtered = billList.filter((b) => {
               <div className="flex items-center gap-2">
                 <button
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => p - 1)}
+                  onClick={() => setCurrentPage((p) => p - 1)}
                   className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <button
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(p => p + 1)}
+                  onClick={() => setCurrentPage((p) => p + 1)}
                   className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
                 >
                   Next
@@ -1213,7 +1263,10 @@ const filtered = billList.filter((b) => {
                       Firm <span className="text-rose-500">*</span>
                     </label>
                     <SearchableSelect
-                      options={[{ value: "", label: "Select Invoicing Firm" }, ...firms.map((f) => ({ value: f._id, label: f.name }))]}
+                      options={[
+                        { value: "", label: "Select Invoicing Firm" },
+                        ...firms.map((f) => ({ value: f._id, label: f.name })),
+                      ]}
                       value={firmId}
                       onChange={(val) => {
                         setFirmId(val);
@@ -1227,7 +1280,13 @@ const filtered = billList.filter((b) => {
                       Party (Customer) <span className="text-rose-500">*</span>
                     </label>
                     <SearchableSelect
-                      options={[{ value: "", label: "Select Billed Party" }, ...parties.map((p) => ({ value: p._id, label: p.name }))]}
+                      options={[
+                        { value: "", label: "Select Billed Party" },
+                        ...parties.map((p) => ({
+                          value: p._id,
+                          label: p.name,
+                        })),
+                      ]}
                       value={partyId}
                       onChange={(val) => {
                         setPartyId(val);

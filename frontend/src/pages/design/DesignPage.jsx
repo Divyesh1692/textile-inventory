@@ -6,7 +6,7 @@ import {
   TrashIcon,
   PhotoIcon,
 } from "@heroicons/react/24/solid";
-import { Search, Edit2, Trash2, Image as ImageIcon } from "lucide-react";
+import { Search, Edit2, Trash2, Image as ImageIcon, Eye, EyeOff } from "lucide-react";
 import axios from "../../utils/axios";
 
 import DashboardLayout from "../../layout/DashboardLayout";
@@ -19,6 +19,8 @@ export default function DesignPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
+  const [showProfit, setShowProfit] = useState(false);
 
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -41,16 +43,29 @@ export default function DesignPage() {
     fetchDesigns();
   }, []);
 
-  // search by name (case-insensitive)
+  // search by name (case-insensitive) and apply sorting
   useEffect(() => {
+    let result = designs;
+
     const s = search.trim().toLowerCase();
-    if (!s) setFiltered(designs);
-    else
-      setFiltered(
-        designs.filter((d) => (d.name || "").toLowerCase().includes(s)),
+    if (s) {
+      result = result.filter((d) => 
+        (d.name || "").toLowerCase().includes(s) || 
+        (d.shortcode || "").toLowerCase().includes(s)
       );
+    }
+
+    if (sortBy === "a-z") {
+      result = [...result].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    } else if (sortBy === "z-a") {
+      result = [...result].sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+    } else {
+      result = [...result].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+
+    setFiltered(result);
     setCurrentPage(1);
-  }, [search, designs]);
+  }, [search, designs, sortBy]);
   
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const currentItems = filtered.slice(
@@ -100,17 +115,27 @@ export default function DesignPage() {
         {/* Data Container */}
         <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 overflow-hidden">
           {/* Toolbar */}
-          <div className="border-b border-slate-100 p-4 sm:p-6 bg-slate-50/50">
-            <div className="relative max-w-md">
+          <div className="border-b border-slate-100 p-4 sm:p-6 bg-slate-50/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full sm:max-w-md">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by name..."
+                placeholder="Search by name or shortcode..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all shadow-sm"
               />
             </div>
+            
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all shadow-sm cursor-pointer"
+            >
+              <option value="recent">Recently Added</option>
+              <option value="a-z">Name (A to Z)</option>
+              <option value="z-a">Name (Z to A)</option>
+            </select>
           </div>
 
         {/* Table (desktop) */}
@@ -120,10 +145,20 @@ export default function DesignPage() {
                 <tr className="bg-slate-50/80 border-b border-slate-100">
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Photo</th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Shortcode</th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Old Rate</th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rate</th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Costing</th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Profit</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Diamonds</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Jarkan</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Panching</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Gala</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    Profit
+                    <button onClick={() => setShowProfit(!showProfit)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                      {showProfit ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
@@ -147,10 +182,15 @@ export default function DesignPage() {
                     />
                   </td>
                   <td className="py-4 px-6">{d.name}</td>
+                  <td className="py-4 px-6 font-mono text-slate-500 text-sm">{d.shortcode || "-"}</td>
                   <td className="py-4 px-6">{d.oldRate}</td>
                   <td className="p-3 font-semibold">{d.rate}</td>
                   <td className="py-4 px-6 text-rose-600 font-medium">{d.costing || 0}</td>
-                  <td className="py-4 px-6 text-emerald-600 font-bold">{(d.rate || 0) - (d.costing || 0)}</td>
+                  <td className="py-4 px-6 text-slate-700">{d.diamonds || 0}</td>
+                  <td className="py-4 px-6 text-slate-700">{d.jarkan || 0}</td>
+                  <td className="py-4 px-6 text-slate-700">{d.panching || 0}</td>
+                  <td className="py-4 px-6 text-slate-700">{d.gala || 0}</td>
+                  <td className="py-4 px-6 text-emerald-600 font-bold">{showProfit ? (d.rate || 0) - (d.costing || 0) : "****"}</td>
                   <td className="py-4 px-6">
                     <div className="flex items-center justify-end gap-2">
                       <button
@@ -219,8 +259,17 @@ export default function DesignPage() {
                     <div className="text-sm font-medium text-rose-600">
                       Costing: {d.costing ?? 0}
                     </div>
-                    <div className="text-sm font-bold text-emerald-600">
-                      Profit: {(d.rate || 0) - (d.costing || 0)}
+                    <div className="grid grid-cols-2 gap-1 mt-1 mb-2">
+                      <div className="text-xs text-slate-500">Diamonds: {d.diamonds || 0}</div>
+                      <div className="text-xs text-slate-500">Jarkan: {d.jarkan || 0}</div>
+                      <div className="text-xs text-slate-500">Panching: {d.panching || 0}</div>
+                      <div className="text-xs text-slate-500">Gala: {d.gala || 0}</div>
+                    </div>
+                    <div className="text-sm font-bold text-emerald-600 flex items-center gap-2">
+                      Profit: {showProfit ? (d.rate || 0) - (d.costing || 0) : "****"}
+                      <button onClick={() => setShowProfit(!showProfit)} className="text-slate-400">
+                        {showProfit ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
                 </div>

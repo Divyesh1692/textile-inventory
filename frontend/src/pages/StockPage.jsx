@@ -14,6 +14,8 @@ import {
   Trash2,
   ArrowUpDown,
   Box as BoxIcon,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import DashboardLayout from "../layout/DashboardLayout";
 import SearchableSelect from "../components/SearchableSelect";
@@ -23,6 +25,7 @@ export default function StockPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editStockId, setEditStockId] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [showProfit, setShowProfit] = useState(false);
 
   // Form state
   const defaultDate = new Date().toISOString().split("T")[0];
@@ -256,6 +259,7 @@ export default function StockPage() {
 
   const filtered = stockList.filter((s) => {
     const designName = s.designId?.name || "";
+    const designShortcode = s.designId?.shortcode || "";
     const partyName = s.partyId?.name || "";
     const firmName = s.firmId?.name || "";
     const challan = s.challanNo || "";
@@ -265,6 +269,7 @@ export default function StockPage() {
     // Search filter
     const matchesSearch =
       designName.toLowerCase().includes(term) ||
+      designShortcode.toLowerCase().includes(term) ||
       partyName.toLowerCase().includes(term) ||
       firmName.toLowerCase().includes(term) ||
       challan.toLowerCase().includes(term) ||
@@ -644,8 +649,11 @@ export default function StockPage() {
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
                     Amount
                   </th>
-                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                  <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right flex items-center justify-end gap-2">
                     Profit
+                    <button onClick={() => setShowProfit(!showProfit)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                      {showProfit ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </th>
                   <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                     Status
@@ -726,13 +734,13 @@ export default function StockPage() {
                       <td className="py-4 px-6 text-right text-sm font-bold text-emerald-600">
                         ₹{(stock.Amount || 0).toLocaleString()}
                       </td>
-                      <td className="py-4 px-6 text-right text-sm font-bold text-emerald-600">
-                        ₹
-                        {(
-                          (stock.rate -
-                            (stock.costing || stock.designId?.costing || 0)) *
-                          stock.qty
-                        ).toLocaleString()}
+                      <td className="py-4 px-6 text-right text-sm font-bold text-emerald-600 flex justify-end items-center gap-2">
+                        {showProfit ? (
+                          "₹" +
+                          ((stock.rate - (stock.costing || stock.designId?.costing || 0)) * stock.qty).toLocaleString()
+                        ) : (
+                          "****"
+                        )}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span
@@ -1075,10 +1083,12 @@ export default function StockPage() {
                           <SearchableSelect
                             options={[
                               { value: "", label: "Select Design" },
-                              ...designs.map((d) => ({
-                                value: d._id,
-                                label: d.name,
-                              })),
+                              ...[...designs]
+                                .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+                                .map((d) => ({
+                                  value: d._id,
+                                  label: d.shortcode ? `${d.name} (${d.shortcode})` : d.name,
+                                })),
                             ]}
                             value={item.designId}
                             onChange={(val) =>
