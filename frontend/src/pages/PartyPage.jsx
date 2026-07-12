@@ -3,6 +3,8 @@ import { PlusIcon } from "@heroicons/react/24/solid";
 import { Search, MoreVertical, Edit2, Trash2, Users } from "lucide-react";
 import DashboardLayout from "../layout/DashboardLayout";
 import axios from "./../utils/axios";
+import { toast } from "react-hot-toast";
+import { toastConfirm } from "../utils/toastConfirm";
 
 export default function PartyPage() {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -46,9 +48,10 @@ export default function PartyPage() {
       }
 
       await getParty();
+      toast.success(editId ? "Party updated successfully" : "Party added successfully");
     } catch (error) {
       console.error("Error saving party:", error);
-      alert("Something went wrong! Party not saved.");
+      toast.error("Something went wrong! Party not saved.");
     }
   };
 
@@ -61,14 +64,16 @@ export default function PartyPage() {
   };
 
   const handleDeleteParty = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this party?")) return;
-    try {
-      await axios.delete(`/party/${id}`);
-      await getParty();
-    } catch (error) {
-      console.error("Error deleting party:", error);
-      alert("Failed to delete party.");
-    }
+    toastConfirm("Are you sure you want to delete this party?", async () => {
+      try {
+        await axios.delete(`/party/${id}`);
+        await getParty();
+        toast.success("Party deleted successfully");
+      } catch (error) {
+        console.error("Error deleting party:", error);
+        toast.error("Failed to delete party.");
+      }
+    });
   };
 
   const handleOpenAdd = () => {

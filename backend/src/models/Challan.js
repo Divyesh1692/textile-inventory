@@ -34,7 +34,10 @@ const challanSchema = new mongoose.Schema(
     partyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Party",
-      required: true,
+    },
+    tempPartyName: {
+      type: String,
+      default: "",
     },
     firmId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -59,6 +62,10 @@ const challanSchema = new mongoose.Schema(
       type: String,
       enum: ["Delivered", "Billed", "Printed"],
       default: "Delivered",
+    },
+    notes: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true },

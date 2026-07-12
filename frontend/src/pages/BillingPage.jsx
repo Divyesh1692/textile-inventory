@@ -15,6 +15,8 @@ import {
 import DashboardLayout from "../layout/DashboardLayout";
 import SearchableSelect from "../components/SearchableSelect";
 import axios from "../utils/axios";
+import { toast } from "react-hot-toast";
+import { toastConfirm } from "../utils/toastConfirm";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const statusColor = (status) => {
@@ -346,6 +348,7 @@ export default function BillingPage() {
   const [firmId, setFirmId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedChallans, setSelectedChallans] = useState([]);
+  const [notes, setNotes] = useState("");
 
   const [showFilters, setShowFilters] = useState(false);
   const [timeFilter, setTimeFilter] = useState("all");
@@ -395,14 +398,25 @@ export default function BillingPage() {
     fetchData();
   }, []);
 
-  const fetchNextBillNumber = async () => {
+  const fetchNextBillNumber = async (selectedFirmId) => {
     try {
-      const res = await axios.get("/bill/get-next-number");
+      const ts = Date.now();
+      const url = selectedFirmId 
+        ? `/bill/get-next-number?firmId=${selectedFirmId}&t=${ts}` 
+        : `/bill/get-next-number?t=${ts}`;
+      const res = await axios.get(url);
       setBillNumber(res.data.nextBillNumber);
     } catch (err) {
       console.error("Error fetching next bill number:", err);
     }
   };
+
+  useEffect(() => {
+    // Only fetch automatically on form open if no firm is selected yet
+    if (showForm && !editId && !firmId) {
+      fetchNextBillNumber("");
+    }
+  }, [showForm, editId]);
 
   // ── Calculated values ──
   const selectedChallanData = availableChallans.filter((c) =>
@@ -447,9 +461,7 @@ export default function BillingPage() {
         );
 
         if (currentItemCount + itemsToAddCount > 15) {
-          alert(
-            "A single bill cannot exceed 15 items. Please create multiple bills for more challans.",
-          );
+          toast.error("A single bill cannot exceed 15 items. Please create multiple bills for more challans.");
           return prev;
         }
         return [...prev, challanId];
@@ -467,8 +479,9 @@ export default function BillingPage() {
     setSelectedChallans([]);
     setIsGst(false);
     setDiscountPct(5.25);
+    setNotes("");
     setShowForm(true);
-    await fetchNextBillNumber();
+    await fetchNextBillNumber("");
   };
 
   // ── Open Edit form ──
@@ -484,6 +497,7 @@ export default function BillingPage() {
     );
     setIsGst(!!bill.isGst);
     setDiscountPct(bill.discountPct || 0);
+    setNotes(bill.notes || "");
     // Load previously selected challans
     setSelectedChallans(
       (bill.challanIds || []).map((c) => (typeof c === "string" ? c : c._id)),
@@ -494,7 +508,7 @@ export default function BillingPage() {
   // ── Save bill ──
   const saveBill = async () => {
     if (!billNumber || !partyId || !firmId || selectedChallans.length === 0) {
-      alert("Please fill required fields and select at least one challan.");
+      toast.error("Please fill required fields and select at least one challan.");
       return;
     }
     try {
@@ -506,6 +520,7 @@ export default function BillingPage() {
         challanIds: selectedChallans,
         isGst,
         discountPct: pct,
+        notes,
       };
       if (editId) {
         await axios.put(`/bill/update/${editId}`, payload);
@@ -514,12 +529,10 @@ export default function BillingPage() {
       }
       await fetchData();
       setShowForm(false);
+      toast.success(editId ? "Bill updated successfully" : "Bill created successfully");
     } catch (error) {
       console.error("Error saving bill:", error);
-      alert(
-        error.response?.data?.message ||
-          "Something went wrong! Bill not saved.",
-      );
+      toast.error(error.response?.data?.message || "Something went wrong! Bill not saved.");
     }
   };
 
@@ -546,15 +559,17 @@ export default function BillingPage() {
     };
   };
 
-  const handleMarkPaid = async (billId) => {
-    if (!window.confirm("Are you sure you want to mark this bill as Paid?"))
-      return;
-    try {
-      await axios.patch(`/bill/mark-paid/${billId}`);
-      await fetchData();
-    } catch (err) {
-      console.error("Error marking bill paid:", err);
-    }
+  const handleMarkPaid = (billId) => {
+    toastConfirm("Are you sure you want to mark this bill as Paid?", async () => {
+      try {
+        await axios.patch(`/bill/mark-paid/${billId}`);
+        toast.success("Bill marked as Paid");
+        await fetchData();
+      } catch (err) {
+        console.error("Error marking bill paid:", err);
+        toast.error("Failed to mark bill as Paid");
+      }
+    });
   };
 
   const filtered = billList.filter((b) => {
@@ -1271,6 +1286,9 @@ export default function BillingPage() {
                       onChange={(val) => {
                         setFirmId(val);
                         setSelectedChallans([]);
+                        if (!editId) {
+                          fetchNextBillNumber(val);
+                        }
                       }}
                       placeholder="Select Invoicing Firm"
                     />
@@ -1461,6 +1479,20 @@ export default function BillingPage() {
                           </span>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Notes */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700">
+                        Notes / Remarks
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Optional notes or remarks"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      />
                     </div>
                   </div>
                 )}

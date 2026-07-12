@@ -1,5 +1,6 @@
 const Stock = require("../models/Stock");
 const Design = require("../models/Design");
+const Challan = require("../models/Challan");
 
 exports.createStock = async (req, res) => {
   try {
@@ -14,6 +15,7 @@ exports.createStock = async (req, res) => {
       rate,
       Amount,
       status,
+      notes,
     } = req.body;
 
     const design = await Design.findById(designId);
@@ -31,6 +33,7 @@ exports.createStock = async (req, res) => {
       costing,
       Amount,
       status: status || "Pending",
+      notes: notes || "",
     });
 
     await stock.save();
@@ -66,6 +69,7 @@ exports.createBulkStock = async (req, res) => {
       costing: designMap[item.designId.toString()] || 0,
       Amount: item.qty * item.rate,
       status: item.status || "Pending",
+      notes: item.notes || "",
     }));
 
     const stocks = await Stock.insertMany(stockDocuments);
@@ -94,11 +98,23 @@ exports.getStocks = async (req, res) => {
 
 exports.updateStock = async (req, res) => {
   try {
-    const stock = await Stock.findOneAndUpdate({ _id: req.params.id }, req.body, {
+    const updateData = { ...req.body };
+    if (updateData.firmId === "") updateData.firmId = null;
+    if (updateData.partyId === "") updateData.partyId = null;
+
+    const stock = await Stock.findOneAndUpdate({ _id: req.params.id }, updateData, {
       new: true,
     });
 
     if (!stock) return res.status(404).json({ message: "Stock not found" });
+
+    // Sync partyId and firmId with Challan if this stock is part of one
+    if (stock.deliveryChallanNo) {
+      await Challan.updateMany(
+        { challanNumber: stock.deliveryChallanNo },
+        { partyId: stock.partyId, firmId: stock.firmId }
+      );
+    }
 
     res.json({ message: "Stock updated", stock });
   } catch (err) {

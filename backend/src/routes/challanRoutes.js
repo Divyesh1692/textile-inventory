@@ -3,6 +3,7 @@ const router = express.Router();
 const challanController = require("../controllers/challanController");
 
 router.post("/add", challanController.createChallan);
+router.post("/direct", challanController.createDirectChallan);
 router.post("/bulk", challanController.createBulkChallan);
 router.put("/update/:id", challanController.updateChallan);
 router.patch("/mark-printed/:id", challanController.markChallanPrinted);

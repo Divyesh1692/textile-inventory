@@ -20,12 +20,19 @@ import {
 import DashboardLayout from "../layout/DashboardLayout";
 import SearchableSelect from "../components/SearchableSelect";
 import axios from "../utils/axios";
+import StockReportModal from "./StockReportModal";
+import GenerateChallanModal from "../components/GenerateChallanModal";
+import { toast } from "react-hot-toast";
+import { toastConfirm } from "../utils/toastConfirm";
+
 
 export default function StockPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editStockId, setEditStockId] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [showProfit, setShowProfit] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showGenerateChallanModal, setShowGenerateChallanModal] = useState(false);
 
   // Form state
   const defaultDate = new Date().toISOString().split("T")[0];
@@ -40,6 +47,7 @@ export default function StockPage() {
       qty: "",
       rate: "",
       status: "Pending",
+      notes: "",
     },
   ]);
 
@@ -111,6 +119,7 @@ export default function StockPage() {
         qty: "",
         rate: "",
         status: "Pending",
+        notes: "",
       },
     ]);
   };
@@ -119,61 +128,57 @@ export default function StockPage() {
 
   const handleSubmit = async () => {
     const validItems = items.filter(
-      (i) =>
-        i.date &&
-        i.challanNo &&
-        i.firmId &&
-        i.partyId &&
-        i.designId &&
-        i.chartNo &&
-        i.qty,
+      (i) => i.designId && i.qty && i.rate
     );
     if (!validItems.length) {
-      alert(
-        "Please ensure all required fields are filled for at least one item.",
-      );
+      toast.error("Please ensure all required fields are filled for at least one item.");
       return;
     }
 
-    if (
-      editStockId &&
-      !window.confirm("Are you sure you want to update this stock entry?")
-    ) {
-      return;
-    }
-
-    try {
-      if (editStockId) {
-        const item = validItems[0];
-        const payload = {
-          date: item.date,
-          challanNo: item.challanNo,
-          designId: item.designId,
-          chartNo: item.chartNo,
-          qty: Number(item.qty),
-          rate: Number(item.rate),
-          Amount: Number(item.qty) * Number(item.rate),
-          firmId: item.firmId,
-          partyId: item.partyId,
-          status: item.status,
-        };
-        await axios.put(`/stock/${editStockId}`, payload);
-      } else {
-        const payload = {
-          items: validItems.map((i) => ({
-            ...i,
-            qty: Number(i.qty),
-            rate: Number(i.rate),
-            status: i.status,
-          })),
-        };
-        await axios.post("/stock/bulk", payload);
+    const doSave = async () => {
+      try {
+        if (editStockId) {
+          const item = validItems[0];
+          const payload = {
+            date: item.date,
+            challanNo: item.challanNo,
+            designId: item.designId,
+            chartNo: item.chartNo,
+            qty: Number(item.qty),
+            rate: Number(item.rate),
+            Amount: Number(item.qty) * Number(item.rate),
+            firmId: item.firmId,
+            partyId: item.partyId,
+            status: item.status,
+            notes: item.notes,
+          };
+          await axios.put(`/stock/${editStockId}`, payload);
+          toast.success("Stock updated successfully");
+        } else {
+          const payload = {
+            items: validItems.map((i) => ({
+              ...i,
+              qty: Number(i.qty),
+              rate: Number(i.rate),
+              status: i.status,
+              notes: i.notes,
+            })),
+          };
+          await axios.post("/stock/bulk", payload);
+          toast.success("Stock added successfully");
+        }
+        await fetchData();
+        handleModalClose();
+      } catch (error) {
+        console.error("Error saving stock:", error);
+        toast.error("Something went wrong! Stock not saved.");
       }
-      await fetchData();
-      handleModalClose();
-    } catch (error) {
-      console.error("Error saving stock:", error);
-      alert("Something went wrong! Stock not saved.");
+    };
+
+    if (editStockId) {
+      toastConfirm("Are you sure you want to update this stock entry?", doSave);
+    } else {
+      doSave();
     }
   };
 
@@ -192,39 +197,37 @@ export default function StockPage() {
         qty: stock.qty || "",
         rate: stock.rate || "",
         status: stock.status || "Pending",
+        notes: stock.notes || "",
       },
     ]);
     setShowAddForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this stock entry?")) {
+  const handleDelete = (id) => {
+    toastConfirm("Are you sure you want to delete this stock entry?", async () => {
       try {
         await axios.delete(`/stock/${id}`);
+        toast.success("Stock deleted");
         await fetchData();
       } catch (error) {
         console.error("Error deleting stock:", error);
-        alert("Failed to delete stock");
+        toast.error("Failed to delete stock");
       }
-    }
+    });
   };
 
-  const handleStatusToggle = async (stock) => {
-    if (
-      window.confirm(
-        `Are you sure you want to change status from ${stock.status || "Pending"}?`,
-      )
-    ) {
+  const handleStatusToggle = (stock) => {
+    toastConfirm(`Are you sure you want to change status from ${stock.status || "Pending"}?`, async () => {
       try {
-        const newStatus =
-          stock.status === "Delivered" ? "Pending" : "Delivered";
+        const newStatus = stock.status === "Delivered" ? "Pending" : "Delivered";
         await axios.put(`/stock/${stock._id}`, { status: newStatus });
+        toast.success("Status updated");
         fetchData();
       } catch (error) {
         console.error("Error updating status:", error);
-        alert("Failed to update status");
+        toast.error("Failed to update status");
       }
-    }
+    });
   };
 
   const handleModalClose = () => {
@@ -241,6 +244,7 @@ export default function StockPage() {
         qty: "",
         rate: "",
         status: "Pending",
+        notes: "",
       },
     ]);
   };
@@ -260,8 +264,8 @@ export default function StockPage() {
   const filtered = stockList.filter((s) => {
     const designName = s.designId?.name || "";
     const designShortcode = s.designId?.shortcode || "";
-    const partyName = s.partyId?.name || "";
     const firmName = s.firmId?.name || "";
+    const partyName = s.partyId?.name || s.tempPartyName || "";
     const challan = s.challanNo || "";
     const chart = s.chartNo || "";
     const term = search.toLowerCase();
@@ -312,7 +316,12 @@ export default function StockPage() {
       }
     }
 
-    const statusMatch = statusFilter === "all" || s.status === statusFilter;
+    let statusMatch = true;
+    if (statusFilter === "unassigned") {
+      statusMatch = !s.firmId || !s.partyId;
+    } else if (statusFilter !== "all") {
+      statusMatch = s.status === statusFilter;
+    }
     return (
       matchesSearch && matchesFirm && matchesParty && matchesDate && statusMatch
     );
@@ -361,7 +370,7 @@ export default function StockPage() {
   };
 
   const handleGenerateChallan = () => {
-    navigate("/challan", { state: { selectedStocks } });
+    setShowGenerateChallanModal(true);
   };
 
   return (
@@ -387,6 +396,13 @@ export default function StockPage() {
                 Generate Challan ({selectedStocks.length})
               </button>
             )}
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-200 transition-all active:scale-95 border border-slate-200"
+              >
+                <Printer className="w-4 h-4" />
+                Report
+              </button>
             <button
               onClick={() => {
                 setShowAddForm(true);
@@ -504,9 +520,10 @@ export default function StockPage() {
                   }}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                 >
-                  <option value="all">All Statuses</option>
+                  <option value="all">All Status</option>
                   <option value="Pending">Pending</option>
                   <option value="Delivered">Delivered</option>
+                  <option value="unassigned">Unassigned</option>
                 </select>
               </div>
 
@@ -722,7 +739,7 @@ export default function StockPage() {
                         </p>
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>{" "}
-                          {stock.partyId?.name || "-"}
+                          {stock.partyId?.name || stock.tempPartyName || "-"}
                         </p>
                       </td>
                       <td className="py-4 px-6 text-right text-sm font-semibold text-slate-700">
@@ -888,7 +905,7 @@ export default function StockPage() {
                     <div>
                       <p className="text-xs text-slate-400">Party</p>
                       <p className="font-medium text-slate-700 truncate">
-                        {stock.partyId?.name || "-"}
+                        {stock.partyId?.name || stock.tempPartyName || "-"}
                       </p>
                     </div>
                   </div>
@@ -1005,7 +1022,7 @@ export default function StockPage() {
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-slate-100">
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">
-                            Date *
+                            Date
                           </label>
                           <input
                             type="date"
@@ -1018,7 +1035,7 @@ export default function StockPage() {
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">
-                            Challan No *
+                            Challan No
                           </label>
                           <input
                             type="text"
@@ -1036,7 +1053,7 @@ export default function StockPage() {
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">
-                            Firm *
+                            Firm
                           </label>
                           <SearchableSelect
                             options={[
@@ -1055,7 +1072,7 @@ export default function StockPage() {
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">
-                            Party *
+                            Party
                           </label>
                           <SearchableSelect
                             options={[
@@ -1100,7 +1117,7 @@ export default function StockPage() {
 
                         <div className="col-span-1 md:col-span-2 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">
-                            Chart No *
+                            Chart No
                           </label>
                           <input
                             type="text"
@@ -1169,6 +1186,24 @@ export default function StockPage() {
                               ? (item.qty * item.rate).toLocaleString("en-IN")
                               : 0}
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Notes Row */}
+                      <div className="grid grid-cols-1 gap-4 mt-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Notes
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Optional notes"
+                            value={item.notes}
+                            onChange={(e) =>
+                              handleItemChange(index, "notes", e.target.value)
+                            }
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                          />
                         </div>
                       </div>
                     </div>
@@ -1255,6 +1290,33 @@ export default function StockPage() {
               />
             </div>
           </div>
+        )}
+
+        {showReportModal && (
+          <StockReportModal
+            isOpen={showReportModal}
+            onClose={() => setShowReportModal(false)}
+            stockList={stockList}
+            designs={designs}
+            firms={firms}
+            parties={parties}
+          />
+        )}
+
+        {showGenerateChallanModal && (
+          <GenerateChallanModal
+            isOpen={showGenerateChallanModal}
+            onClose={() => setShowGenerateChallanModal(false)}
+            selectedStocks={selectedStocks}
+            firms={firms}
+            parties={parties}
+            onSuccess={() => {
+              setShowGenerateChallanModal(false);
+              setSelectedStocks([]);
+              fetchData();
+              navigate("/challan");
+            }}
+          />
         )}
       </div>
     </DashboardLayout>

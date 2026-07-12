@@ -4,11 +4,9 @@ const stockSchema = new mongoose.Schema(
   {
     date: {
       type: Date,
-      required: true,
     },
     challanNo: {
       type: String,
-      required: true,
     },
     designId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -17,17 +15,18 @@ const stockSchema = new mongoose.Schema(
     },
     chartNo: {
       type: String,
-      required: true,
     },
     partyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Party",
-      required: true,
+    },
+    tempPartyName: {
+      type: String,
+      default: "",
     },
     firmId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Firm",
-      required: true,
     },
     qty: {
       type: Number,
@@ -55,6 +54,10 @@ const stockSchema = new mongoose.Schema(
       type: String,
       enum: ["Pending", "Delivered"],
       default: "Pending",
+    },
+    notes: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true },

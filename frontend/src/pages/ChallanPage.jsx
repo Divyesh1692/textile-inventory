@@ -15,6 +15,8 @@ import {
 import DashboardLayout from "../layout/DashboardLayout";
 import SearchableSelect from "../components/SearchableSelect";
 import axios from "../utils/axios";
+import { toast } from "react-hot-toast";
+import { toastConfirm } from "../utils/toastConfirm";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const statusColor = (status) => {
@@ -69,7 +71,7 @@ const printChallans = (challansArray) => {
               <td><span class="label">Delivery Challan No:</span> <strong class="value">${challan.challanNumber || "-"}</strong></td>
             </tr>
             <tr>
-              <td><span class="label">Party:</span> <strong class="value">${challan.partyId?.name || "-"}</strong></td>
+              <td><span class="label">Party:</span> <strong class="value">${challan.partyId?.name || challan.tempPartyName || "-"}</strong></td>
               <td><span class="label">Date:</span> <strong class="value">${stockDate}</strong></td>
               <td><span class="label">Delivery Date:</span> <strong class="value">${deliveryDate}</strong></td>
             </tr>
@@ -382,6 +384,7 @@ export default function ChallanPage() {
   const [stockList, setStockList] = useState([]);
   const [parties, setParties] = useState([]);
   const [firms, setFirms] = useState([]);
+  const [designs, setDesigns] = useState([]);
   const [selectedChallans, setSelectedChallans] = useState([]);
 
   // ── View modal ──
@@ -391,6 +394,7 @@ export default function ChallanPage() {
   // ── Add/Edit Form state ──
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null); // null = add mode
+  const [isDirectChallan, setIsDirectChallan] = useState(false);
 
   const defaultDate = new Date().toISOString().split("T")[0];
   const [items, setItems] = useState([
@@ -399,10 +403,12 @@ export default function ChallanPage() {
       challanNumber: "",
       firmId: "",
       partyId: "",
+      tempPartyName: "",
       stockId: "",
       designId: "",
       designName: "",
       stockPhoto: null,
+      chartNo: "",
       qty: "",
       rate: "",
       stockSearchText: "",
@@ -446,11 +452,12 @@ export default function ChallanPage() {
 
   const fetchData = async () => {
     try {
-      const [challanRes, stockRes, partyRes, firmRes] = await Promise.all([
+      const [challanRes, stockRes, partyRes, firmRes, designRes] = await Promise.all([
         axios.get("/challan/get-all"),
         axios.get("/stock/get-all"),
         axios.get("/party/get-all"),
         axios.get("/firm/get-all"),
+        axios.get("/design/get-all"),
       ]);
       setChallanList(Array.isArray(challanRes.data) ? challanRes.data : []);
       setStockList(
@@ -460,6 +467,7 @@ export default function ChallanPage() {
       );
       setParties(partyRes.data);
       setFirms(firmRes.data);
+      setDesigns(designRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -477,6 +485,7 @@ export default function ChallanPage() {
             challanNumber: nextNum || "",
             firmId: s.firmId?._id || s.firmId || "",
             partyId: s.partyId?._id || s.partyId || "",
+            tempPartyName: s.tempPartyName || "",
             stockId: s._id,
             designId: s.designId?._id || s.designId || "",
             designName: s.designId?.name || "",
@@ -519,13 +528,14 @@ export default function ChallanPage() {
         challanNumber: "",
         firmId: "",
         partyId: "",
+        tempPartyName: "",
         stockId: "",
         designId: "",
         designName: "",
         stockPhoto: null,
         qty: "",
-        rate: "",
         stockSearchText: "",
+        notes: "",
       },
     ]);
     setActiveDropdownIndex(null);
@@ -536,7 +546,7 @@ export default function ChallanPage() {
   // ── Open edit form ──
   const handleOpenEditForm = (challan) => {
     if (challan.status === "Billed") {
-      alert("Cannot edit a billed challan.");
+      toast.error("Cannot edit a billed challan.");
       return;
     }
     setEditId(challan._id);
@@ -549,6 +559,7 @@ export default function ChallanPage() {
         challanNumber: challan.challanNumber || "",
         firmId: challan.firmId?._id || challan.firmId || "",
         partyId: challan.partyId?._id || challan.partyId || "",
+        tempPartyName: challan.tempPartyName || "",
         stockId: item.stockId?._id || item.stockId || "",
         designId: item.designId?._id || item.designId || "",
         designName: item.designId?.name || "Unknown",
@@ -556,6 +567,7 @@ export default function ChallanPage() {
         rate: item.rate || "",
         qty: item.qty || "",
         stockSearchText: `${item.designId?.name || "Stock"} (Qty: ${item.qty}, Chart No: ${item.stockId?.chartNo || "-"})`,
+        notes: challan.notes || "",
       },
     ]);
     setActiveDropdownIndex(null);
@@ -584,9 +596,23 @@ export default function ChallanPage() {
       newItems[index].firmId = stock.firmId._id || stock.firmId;
     if (!newItems[index].partyId && stock.partyId)
       newItems[index].partyId = stock.partyId._id || stock.partyId;
+    if (!newItems[index].tempPartyName && stock.tempPartyName)
+      newItems[index].tempPartyName = stock.tempPartyName;
 
     setItems(newItems);
     setActiveDropdownIndex(null);
+  };
+
+  const incrementString = (str) => {
+    if (!str) return "";
+    const match = str.match(/(.*?)(\d+)$/);
+    if (match) {
+      const prefix = match[1];
+      const numStr = match[2];
+      const nextNum = parseInt(numStr, 10) + 1;
+      return `${prefix}${nextNum.toString().padStart(numStr.length, "0")}`;
+    }
+    return str + "-1";
   };
 
   const addChallanRow = () => {
@@ -595,18 +621,18 @@ export default function ChallanPage() {
       ...items,
       {
         deliveryDate: lastItem?.deliveryDate || defaultDate,
-        challanNumber: lastItem?.challanNumber
-          ? (parseInt(lastItem.challanNumber) + 1).toString()
-          : "",
+        challanNumber: incrementString(lastItem?.challanNumber),
         firmId: lastItem?.firmId || "",
         partyId: lastItem?.partyId || "",
+        tempPartyName: lastItem?.tempPartyName || "",
         stockId: "",
         designId: "",
         designName: "",
         stockPhoto: null,
+        chartNo: "",
         qty: "",
-        rate: "",
         stockSearchText: "",
+        notes: "",
       },
     ]);
   };
@@ -617,13 +643,51 @@ export default function ChallanPage() {
 
   // ── Save (Add or Edit) ──
   const saveChallan = async () => {
+    if (isDirectChallan) {
+      const validItems = items.filter(
+        (i) => i.challanNumber && i.firmId && i.designId && i.qty,
+      );
+      if (validItems.length === 0) {
+        toast.error("Please fill all required fields (Challan No, Firm, Design, Qty) for direct challan.");
+        return;
+      }
+      try {
+        await Promise.all(
+          validItems.map((item) =>
+            axios.post("/challan/direct", {
+              challanNumber: item.challanNumber,
+              firmId: item.firmId,
+              partyId: item.partyId || "",
+              tempPartyName: item.tempPartyName || "",
+              deliveryDate: item.deliveryDate,
+              notes: item.notes,
+              items: [
+                {
+                  designId: item.designId,
+                  qty: Number(item.qty),
+                  rate: Number(item.rate || 0),
+                  chartNo: item.chartNo,
+                },
+              ],
+            })
+          )
+        );
+        await fetchData();
+        setShowForm(false);
+        setIsDirectChallan(false);
+        toast.success("Direct Challan(s) created successfully");
+      } catch (error) {
+        console.error("Error saving direct challan:", error);
+        toast.error(error.response?.data?.message || "Failed to save direct challan");
+      }
+      return;
+    }
+
     const validItems = items.filter(
       (i) => i.challanNumber && i.partyId && i.firmId && i.stockId && i.qty,
     );
     if (validItems.length === 0) {
-      alert(
-        "Please ensure all required fields are filled for at least one challan (Challan No, Party, Firm, Stock, Qty).",
-      );
+      toast.error("Please ensure all required fields are filled for at least one challan (Challan No, Party, Firm, Stock, Qty).");
       return;
     }
 
@@ -643,6 +707,7 @@ export default function ChallanPage() {
               rate: Number(item.rate),
             },
           ],
+          notes: item.notes,
         };
         await axios.put(`/challan/update/${editId}`, payload);
       } else {
@@ -656,40 +721,36 @@ export default function ChallanPage() {
             designId: item.designId,
             qty: Number(item.qty),
             rate: Number(item.rate),
+            notes: item.notes,
           })),
         };
         await axios.post("/challan/bulk", payload);
       }
       await fetchData();
       setShowForm(false);
+      toast.success(editId ? "Challan updated successfully" : "Challan(s) created successfully");
     } catch (error) {
       console.error("Error saving challan:", error);
-      alert(
-        error.response?.data?.message ||
-          "Something went wrong! Challan not saved.",
-      );
+      toast.error(error.response?.data?.message || "Something went wrong! Challan not saved.");
     }
   };
 
-  const handleDeleteChallan = async (challan) => {
+  const handleDeleteChallan = (challan) => {
     if (challan.status === "Billed") {
-      alert("Cannot delete a billed challan.");
+      toast.error("Cannot delete a billed challan.");
       return;
     }
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this challan? Stock items will be reverted to Pending.",
-      )
-    )
-      return;
-
-    try {
-      await axios.delete(`/challan/delete/${challan._id}`);
-      await fetchData();
-    } catch (error) {
-      console.error("Error deleting challan:", error);
-      alert(error.response?.data?.message || "Failed to delete challan");
-    }
+    
+    toastConfirm("Are you sure you want to delete this challan? Stock items will be reverted to Pending.", async () => {
+      try {
+        await axios.delete(`/challan/delete/${challan._id}`);
+        toast.success("Challan deleted successfully");
+        await fetchData();
+      } catch (error) {
+        console.error("Error deleting challan:", error);
+        toast.error(error.response?.data?.message || "Failed to delete challan");
+      }
+    });
   };
 
   // ── Print ──
@@ -790,7 +851,7 @@ export default function ChallanPage() {
         }
       }
     }
-    const statusMatch = statusFilter === "all" || s.status === statusFilter;
+    const statusMatch = statusFilter === "all" || c.status === statusFilter;
     return searchMatch && firmMatch && partyMatch && dateMatch && statusMatch;
   });
 
@@ -1079,7 +1140,7 @@ export default function ChallanPage() {
                         </div>
                       </td>
                       <td className="py-4 px-6 text-sm text-slate-900 font-medium">
-                        {challan.partyId?.name || "Unknown Party"}
+                        {challan.partyId?.name || challan.tempPartyName || "Unknown Party"}
                       </td>
                       <td className="py-4 px-6 text-sm text-slate-900 font-medium">
                         {challan.firmId?.name || "Unknown Firm"}
@@ -1216,7 +1277,7 @@ export default function ChallanPage() {
                         {challan.firmId?.name || "-"}
                       </p>
                       <p className="text-xs text-slate-500 truncate">
-                        {challan.partyId?.name || "-"}
+                        {challan.partyId?.name || challan.tempPartyName || "-"}
                       </p>
                     </div>
                     <div className="text-right">
@@ -1339,7 +1400,7 @@ export default function ChallanPage() {
                   <div>
                     <p className="text-xs text-slate-400 mb-1">Party</p>
                     <p className="font-semibold text-slate-900">
-                      {viewChallan.partyId?.name || "-"}
+                      {viewChallan.partyId?.name || viewChallan.tempPartyName || "-"}
                     </p>
                   </div>
                   <div>
@@ -1459,6 +1520,33 @@ export default function ChallanPage() {
                   <p className="text-sm text-slate-500 mt-0.5">
                     Fill details and select stock items to ship.
                   </p>
+                  {!editId && (
+                    <div className="mt-3 flex items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={isDirectChallan}
+                            onChange={(e) => setIsDirectChallan(e.target.checked)}
+                          />
+                          <div
+                            className={`block w-10 h-6 rounded-full transition-colors ${
+                              isDirectChallan ? "bg-emerald-500" : "bg-slate-300"
+                            }`}
+                          ></div>
+                          <div
+                            className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                              isDirectChallan ? "transform translate-x-4" : ""
+                            }`}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-700">
+                          Direct Challan
+                        </span>
+                      </label>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => setShowForm(false)}
@@ -1562,7 +1650,7 @@ export default function ChallanPage() {
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">
-                            Party *
+                            Party {isDirectChallan ? "(Optional)" : "*"}
                           </label>
                           <SearchableSelect
                             options={[
@@ -1579,118 +1667,176 @@ export default function ChallanPage() {
                             placeholder="Select Party"
                           />
                         </div>
+                        {isDirectChallan && !item.partyId && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-600 uppercase">
+                              Temp Party Name
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Aaina, Demo Party"
+                              value={item.tempPartyName}
+                              onChange={(e) =>
+                                handleItemChange(index, "tempPartyName", e.target.value)
+                              }
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Stock Selection */}
+                      {/* Item Selection (Stock or Design) */}
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="col-span-12 md:col-span-6 space-y-1.5 relative">
-                          <label className="text-xs font-semibold text-slate-600 uppercase">
-                            Search & Select Stock *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Search by Design Name or Challan No..."
-                            value={item.stockSearchText}
-                            onChange={(e) => {
-                              handleItemChange(
-                                index,
-                                "stockSearchText",
-                                e.target.value,
-                              );
-                              setActiveDropdownIndex(index);
-                            }}
-                            onClick={() => setActiveDropdownIndex(index)}
-                            onBlur={() =>
-                              setTimeout(
-                                () => setActiveDropdownIndex(null),
-                                200,
-                              )
-                            }
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                          />
-                          {activeDropdownIndex === index && (
-                            <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                              {stockList.filter(
-                                (s) =>
-                                  s.designId?.name
-                                    ?.toLowerCase()
-                                    .includes(
-                                      (
-                                        item.stockSearchText || ""
-                                      ).toLowerCase(),
-                                    ) ||
-                                  s.challanNo
-                                    ?.toLowerCase()
-                                    .includes(
-                                      (
-                                        item.stockSearchText || ""
-                                      ).toLowerCase(),
-                                    ) ||
-                                  s.chartNo
-                                    ?.toLowerCase()
-                                    .includes(
-                                      (
-                                        item.stockSearchText || ""
-                                      ).toLowerCase(),
-                                    ),
-                              ).length > 0 ? (
-                                stockList
-                                  .filter(
-                                    (s) =>
-                                      s.designId?.name
-                                        ?.toLowerCase()
-                                        .includes(
-                                          (
-                                            item.stockSearchText || ""
-                                          ).toLowerCase(),
-                                        ) ||
-                                      s.challanNo
-                                        ?.toLowerCase()
-                                        .includes(
-                                          (
-                                            item.stockSearchText || ""
-                                          ).toLowerCase(),
-                                        ) ||
-                                      s.chartNo
-                                        ?.toLowerCase()
-                                        .includes(
-                                          (
-                                            item.stockSearchText || ""
-                                          ).toLowerCase(),
-                                        ),
-                                  )
-                                  .map((s) => (
-                                    <div
-                                      key={s._id}
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        selectStockItem(index, s);
-                                      }}
-                                      className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
-                                    >
-                                      <div className="flex justify-between items-center">
-                                        <span className="font-semibold text-slate-900">
-                                          {s.designId?.name}
-                                        </span>
-                                        <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                                          {s.qty} available
-                                        </span>
-                                      </div>
-                                      <div className="text-xs text-slate-500 mt-1 flex gap-3">
-                                        <span>Challan No: {s.challanNo}</span>
-                                        <span>Chart No: {s.chartNo || "-"}</span>
-                                        <span>Firm: {s.firmId?.name}</span>
-                                      </div>
-                                    </div>
-                                  ))
-                              ) : (
-                                <div className="px-4 py-3 text-sm text-slate-500 text-center">
-                                  No matching stock found.
-                                </div>
-                              )}
+                        {isDirectChallan ? (
+                          <>
+                            <div className="col-span-12 md:col-span-4 space-y-1.5">
+                              <label className="text-xs font-semibold text-slate-600 uppercase">
+                                Design *
+                              </label>
+                              <SearchableSelect
+                                options={[
+                                  { value: "", label: "Select Design" },
+                                  ...designs.map((d) => ({
+                                    value: d._id,
+                                    label: d.name,
+                                    rate: d.rate,
+                                  })),
+                                ]}
+                                value={item.designId}
+                                onChange={(val) => {
+                                  const selectedDesign = designs.find((d) => d._id === val);
+                                  handleItemChange(index, "designId", val);
+                                  handleItemChange(index, "designName", selectedDesign?.name || "");
+                                  handleItemChange(index, "rate", selectedDesign?.rate || "");
+                                }}
+                                placeholder="Select Design"
+                              />
                             </div>
-                          )}
-                        </div>
+                            <div className="col-span-6 md:col-span-2 space-y-1.5">
+                              <label className="text-xs font-semibold text-slate-600 uppercase">
+                                Chart No
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="Optional"
+                                value={item.chartNo || ""}
+                                onChange={(e) =>
+                                  handleItemChange(index, "chartNo", e.target.value)
+                                }
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono"
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="col-span-12 md:col-span-6 space-y-1.5 relative">
+                            <label className="text-xs font-semibold text-slate-600 uppercase">
+                              Search & Select Stock *
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Search by Design Name or Challan No..."
+                              value={item.stockSearchText}
+                              onChange={(e) => {
+                                handleItemChange(
+                                  index,
+                                  "stockSearchText",
+                                  e.target.value,
+                                );
+                                setActiveDropdownIndex(index);
+                              }}
+                              onClick={() => setActiveDropdownIndex(index)}
+                              onBlur={() =>
+                                setTimeout(
+                                  () => setActiveDropdownIndex(null),
+                                  200,
+                                )
+                              }
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            />
+                            {activeDropdownIndex === index && (
+                              <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                {stockList.filter(
+                                  (s) =>
+                                    s.designId?.name
+                                      ?.toLowerCase()
+                                      .includes(
+                                        (
+                                          item.stockSearchText || ""
+                                        ).toLowerCase(),
+                                      ) ||
+                                    s.challanNo
+                                      ?.toLowerCase()
+                                      .includes(
+                                        (
+                                          item.stockSearchText || ""
+                                        ).toLowerCase(),
+                                      ) ||
+                                    s.chartNo
+                                      ?.toLowerCase()
+                                      .includes(
+                                        (
+                                          item.stockSearchText || ""
+                                        ).toLowerCase(),
+                                      ),
+                                ).length > 0 ? (
+                                  stockList
+                                    .filter(
+                                      (s) =>
+                                        s.designId?.name
+                                          ?.toLowerCase()
+                                          .includes(
+                                            (
+                                              item.stockSearchText || ""
+                                            ).toLowerCase(),
+                                          ) ||
+                                        s.challanNo
+                                          ?.toLowerCase()
+                                          .includes(
+                                            (
+                                              item.stockSearchText || ""
+                                            ).toLowerCase(),
+                                          ) ||
+                                        s.chartNo
+                                          ?.toLowerCase()
+                                          .includes(
+                                            (
+                                              item.stockSearchText || ""
+                                            ).toLowerCase(),
+                                          ),
+                                    )
+                                    .map((s) => (
+                                      <div
+                                        key={s._id}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          selectStockItem(index, s);
+                                        }}
+                                        className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <span className="font-semibold text-slate-900">
+                                            {s.designId?.name}
+                                          </span>
+                                          <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                                            {s.qty} available
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-slate-500 mt-1 flex gap-3">
+                                          <span>Challan No: {s.challanNo}</span>
+                                          <span>Chart No: {s.chartNo || "-"}</span>
+                                          <span>Firm: {s.firmId?.name}</span>
+                                        </div>
+                                      </div>
+                                    ))
+                                ) : (
+                                  <div className="px-4 py-3 text-sm text-slate-500 text-center">
+                                    No matching stock found.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         <div className="col-span-6 md:col-span-2 space-y-1.5">
                           <label className="text-xs font-semibold text-slate-600 uppercase">
@@ -1734,6 +1880,24 @@ export default function ChallanPage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Notes Row */}
+                      <div className="grid grid-cols-1 gap-4 mt-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 uppercase">
+                            Notes
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Optional notes"
+                            value={item.notes}
+                            onChange={(e) =>
+                              handleItemChange(index, "notes", e.target.value)
+                            }
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1763,12 +1927,13 @@ export default function ChallanPage() {
                   disabled={
                     items.length === 0 ||
                     items.some(
-                      (i) =>
-                        !i.challanNumber ||
-                        !i.partyId ||
-                        !i.firmId ||
-                        !i.stockId ||
-                        !i.qty,
+                      (i) => {
+                        if (isDirectChallan) {
+                          return !i.challanNumber || !i.firmId || !i.designId || !i.qty;
+                        } else {
+                          return !i.challanNumber || !i.partyId || !i.firmId || !i.stockId || !i.qty;
+                        }
+                      }
                     )
                   }
                 >

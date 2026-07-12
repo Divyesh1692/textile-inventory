@@ -2,17 +2,19 @@
 import { useState, useEffect } from "react";
 import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import axios from "../../utils/axios";
+import { toast } from "react-hot-toast";
 
 /**
  * Props:
  * - onClose() called after successful upload
+ * - onSuccess() called after successful upload
  *
  * This component posts multipart/form-data to POST /design/add-bulk
  * Form fields (per design):
  *   designs[0][name], designs[0][oldRate], designs[0][rate]
  *   designs[0][photos] => files (multiple)
  */
-export default function BulkDesignModal({ onClose }) {
+export default function BulkDesignModal({ onClose, onSuccess }) {
   const [rows, setRows] = useState([
     { name: "", shortcode: "", oldRate: "", rate: "", costing: "", diamonds: "", jarkan: "", panching: "", gala: "", photos: [] },
   ]);
@@ -37,7 +39,7 @@ export default function BulkDesignModal({ onClose }) {
     // basic validation: each row must have name
     for (let i = 0; i < rows.length; i++) {
       if (!rows[i].name.trim()) {
-        alert(`Please provide name for design ${i + 1}`);
+        toast.error(`Please provide name for design ${i + 1}`);
         return;
       }
     }
@@ -62,13 +64,16 @@ export default function BulkDesignModal({ onClose }) {
         });
       });
 
-      await axios.post("/design/add-bulk", formData);
+      await axios.post("/design/bulk", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      alert("Bulk upload successful");
+      toast.success("Bulk upload successful");
+      if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
       console.error("submitBulk:", err);
-      alert("Bulk upload failed");
+      toast.error("Bulk upload failed");
     } finally {
       setLoading(false);
     }

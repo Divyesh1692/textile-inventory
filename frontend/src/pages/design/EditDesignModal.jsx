@@ -2,11 +2,13 @@
 import { useEffect, useState } from "react";
 import { XMarkIcon, TrashIcon } from "@heroicons/react/24/solid";
 import axios from "../../utils/axios";
+import { toast } from "react-hot-toast";
 
 /**
  * Props:
  * - design: object (existing design record)
  * - onClose(): close modal
+ * - onSuccess(): callback after success
  *
  * PUT multipart/form-data to /design/update/:id
  * Send:
@@ -14,7 +16,7 @@ import axios from "../../utils/axios";
  *   - newPhotos (files) -> form field: photos
  *   - keepPhotos (stringified JSON) -> existing URLs to keep
  */
-export default function EditDesignModal({ design, onClose }) {
+export default function EditDesignModal({ design, onClose, onSuccess }) {
   const [form, setForm] = useState({
     name: "",
     shortcode: "",
@@ -69,7 +71,7 @@ export default function EditDesignModal({ design, onClose }) {
   const submitUpdate = async () => {
     // basic validation
     if (!form.name.trim()) {
-      alert("Please provide a name");
+      toast.error("Please provide a name");
       return;
     }
 
@@ -96,11 +98,12 @@ export default function EditDesignModal({ design, onClose }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Design updated");
+      toast.success("Design updated");
+      if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
       console.error("submitUpdate:", err);
-      alert("Update failed");
+      toast.error("Update failed");
     } finally {
       setLoading(false);
     }

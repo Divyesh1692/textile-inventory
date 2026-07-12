@@ -8,6 +8,8 @@ import {
 } from "@heroicons/react/24/solid";
 import { Search, Edit2, Trash2, Image as ImageIcon, Eye, EyeOff } from "lucide-react";
 import axios from "../../utils/axios";
+import { toast } from "react-hot-toast";
+import { toastConfirm } from "../../utils/toastConfirm";
 
 import DashboardLayout from "../../layout/DashboardLayout";
 import EditDesignModal from "./EditDesignModal";
@@ -35,7 +37,7 @@ export default function DesignPage() {
       setFiltered(res.data || []);
     } catch (err) {
       console.error("fetchDesigns:", err);
-      alert("Failed to load designs.");
+      toast.error("Failed to load designs.");
     }
   };
 
@@ -78,15 +80,17 @@ export default function DesignPage() {
     setShowEditModal(true);
   };
 
-  const deleteDesign = async (id) => {
-    if (!window.confirm("Delete this design?")) return;
-    try {
-      await axios.delete(`/design/${id}`);
-      fetchDesigns();
-    } catch (err) {
-      console.error("deleteDesign:", err);
-      alert("Failed to delete.");
-    }
+  const deleteDesign = (id) => {
+    toastConfirm("Delete this design?", async () => {
+      try {
+        await axios.delete(`/design/${id}`);
+        toast.success("Design deleted");
+        fetchDesigns();
+      } catch (err) {
+        console.error("deleteDesign:", err);
+        toast.error("Failed to delete.");
+      }
+    });
   };
 
   return (

@@ -11,6 +11,7 @@ exports.createBill = async (req, res) => {
       date,
       isGst,
       discountPct,
+      notes,
     } = req.body;
 
     if (!challanIds || challanIds.length === 0) {
@@ -67,7 +68,7 @@ exports.createBill = async (req, res) => {
       sgst,
       totalAmount,
       date,
-
+      notes: notes || "",
     });
 
     const savedBill = await newBill.save();
@@ -97,10 +98,10 @@ exports.updateBill = async (req, res) => {
       isGst,
       discountPct,
       challanIds,
+      notes,
     } = req.body;
 
-    const bill = await Bill.findOne({ _id: id,
- });
+    const bill = await Bill.findOne({ _id: id });
     if (!bill) return res.status(404).json({ message: "Bill not found" });
 
     if (!challanIds || challanIds.length === 0) {
@@ -178,6 +179,7 @@ exports.updateBill = async (req, res) => {
     bill.cgst = cgst;
     bill.sgst = sgst;
     bill.totalAmount = totalAmount;
+    if (notes !== undefined) bill.notes = notes;
 
     const updatedBill = await bill.save();
     res.status(200).json(updatedBill);
@@ -193,8 +195,7 @@ exports.markBillPrinted = async (req, res) => {
   try {
     const { id } = req.params;
     const bill = await Bill.findOneAndUpdate(
-      { _id: id,
- },
+      { _id: id },
       { status: "Printed" },
       { new: true },
     );
@@ -212,8 +213,7 @@ exports.markBillPaid = async (req, res) => {
   try {
     const { id } = req.params;
     const bill = await Bill.findOneAndUpdate(
-      { _id: id,
- },
+      { _id: id },
       { status: "Paid" },
       { new: true },
     );
@@ -229,16 +229,41 @@ exports.markBillPaid = async (req, res) => {
 
 exports.getNextBillNumber = async (req, res) => {
   try {
-    const lastBill = await Bill.findOne({
- }).sort({ createdAt: -1 });
-    let nextNum = 1;
-    if (lastBill && lastBill.billNumber) {
-      const match = lastBill.billNumber.match(/\d+$/);
-      if (match) {
-        nextNum = parseInt(match[0], 10) + 1;
+    const { firmId } = req.query;
+    let query = {};
+    if (firmId) {
+      query.firmId = firmId;
+    }
+    const bills = await Bill.find(query, "billNumber");
+    console.log(`[getNextBillNumber] firmId=${firmId}, found ${bills.length} bills`, bills.map(b=>b.billNumber));
+    let maxNum = 0;
+    let maxPrefix = "";
+    let maxNumStr = "";
+
+    bills.forEach((b) => {
+      if (b.billNumber) {
+        const match = b.billNumber.match(/(.*?)(\d+)$/);
+        if (match) {
+          const num = parseInt(match[2], 10);
+          if (num > maxNum) {
+            maxNum = num;
+            maxPrefix = match[1];
+            maxNumStr = match[2];
+          }
+        }
+      }
+    });
+
+    let nextBillStr = "1";
+    if (maxNum > 0) {
+      const nextNum = maxNum + 1;
+      nextBillStr = `${maxPrefix}${nextNum.toString().padStart(maxNumStr.length, "0")}`;
+    } else if (bills.length > 0) {
+      const lastBill = await Bill.findOne(query).sort({ createdAt: -1 });
+      if (lastBill && lastBill.billNumber) {
+        nextBillStr = lastBill.billNumber + "-1";
       }
     }
-    const nextBillStr = nextNum.toString();
     res.status(200).json({ nextBillNumber: nextBillStr });
   } catch (error) {
     res.status(500).json({
@@ -250,8 +275,7 @@ exports.getNextBillNumber = async (req, res) => {
 
 exports.getBills = async (req, res) => {
   try {
-    const bills = await Bill.find({
- })
+    const bills = await Bill.find({})
       .populate("partyId", "name address gst")
       .populate("firmId", "name address gst phone")
       .populate({
@@ -273,8 +297,7 @@ exports.getBills = async (req, res) => {
 
 exports.getBillById = async (req, res) => {
   try {
-    const bill = await Bill.findOne({ _id: req.params.id,
- })
+    const bill = await Bill.findOne({ _id: req.params.id })
       .populate("partyId", "name address gst")
       .populate("firmId", "name address gst phone")
       .populate({

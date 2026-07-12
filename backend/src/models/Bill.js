@@ -68,6 +68,10 @@ const billSchema = new mongoose.Schema(
       enum: ["Unpaid", "Paid", "Partial", "Printed"],
       default: "Unpaid",
     },
+    notes: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );

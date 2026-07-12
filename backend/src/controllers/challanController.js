@@ -1,12 +1,15 @@
 const Challan = require("../models/Challan");
 const Stock = require("../models/Stock");
+const Design = require("../models/Design");
 
 exports.createBulkChallan = async (req, res) => {
   try {
     const { items } = req.body;
 
     if (!items || items.length === 0) {
-      return res.status(400).json({ message: "No items provided for bulk challan." });
+      return res
+        .status(400)
+        .json({ message: "No items provided for bulk challan." });
     }
 
     const newChallans = [];
@@ -14,7 +17,9 @@ exports.createBulkChallan = async (req, res) => {
     for (const item of items) {
       const stock = await Stock.findById(item.stockId);
       if (!stock) {
-        return res.status(404).json({ message: `Stock not found for ID: ${item.stockId}` });
+        return res
+          .status(404)
+          .json({ message: `Stock not found for ID: ${item.stockId}` });
       }
       if (stock.status === "Delivered") {
         return res.status(400).json({
@@ -30,12 +35,14 @@ exports.createBulkChallan = async (req, res) => {
         challanNumber: item.challanNumber,
         partyId: item.partyId,
         firmId: item.firmId,
-        items: [{
-          stockId: item.stockId,
-          designId: item.designId,
-          qty: item.qty,
-          rate: item.rate
-        }],
+        items: [
+          {
+            stockId: item.stockId,
+            designId: item.designId,
+            qty: item.qty,
+            rate: item.rate,
+          },
+        ],
         totalQty: item.qty,
         totalAmount: item.qty * item.rate,
         deliveryDate: item.deliveryDate,
@@ -49,13 +56,17 @@ exports.createBulkChallan = async (req, res) => {
     res.status(201).json(savedChallans);
   } catch (error) {
     console.error("Error creating bulk challan:", error);
-    res.status(500).json({ message: "Server error creating bulk challan", error: error.message });
+    res.status(500).json({
+      message: "Server error creating bulk challan",
+      error: error.message,
+    });
   }
 };
 
 exports.createChallan = async (req, res) => {
   try {
-    const { challanNumber, partyId, firmId, items, deliveryDate } = req.body;
+    const { challanNumber, partyId, firmId, items, deliveryDate, notes } =
+      req.body;
 
     if (!items || items.length === 0) {
       return res
@@ -95,7 +106,7 @@ exports.createChallan = async (req, res) => {
       totalAmount,
       deliveryDate,
       status: "Delivered",
-
+      notes: notes || "",
     });
 
     const savedChallan = await newChallan.save();
@@ -108,10 +119,92 @@ exports.createChallan = async (req, res) => {
   }
 };
 
+exports.createDirectChallan = async (req, res) => {
+  try {
+    const { challanNumber, partyId, tempPartyName, firmId, items, deliveryDate, notes } =
+      req.body;
+
+    if (!items || items.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No items provided for direct challan." });
+    }
+
+    const designIds = [...new Set(items.map((i) => i.designId))];
+    const designs = await Design.find({ _id: { $in: designIds } });
+    const designMap = {};
+    designs.forEach((d) => {
+      designMap[d._id.toString()] = d;
+    });
+
+    let totalQty = 0;
+    let totalAmount = 0;
+
+    const stockDocuments = items.map((item) => {
+      const design = designMap[item.designId.toString()];
+      const costing = design ? design.costing : 0;
+      const rate = item.rate || (design ? design.rate : 0);
+      return {
+        date: null,
+        challanNo: "",
+        deliveryChallanNo: challanNumber,
+        deliveryDate: deliveryDate || Date.now(),
+        partyId: partyId || null,
+        tempPartyName: tempPartyName || "",
+        firmId: firmId || null,
+        designId: item.designId,
+        chartNo: item.chartNo || "",
+        qty: item.qty,
+        rate: rate,
+        costing: costing,
+        Amount: item.qty * rate,
+        status: "Delivered",
+        notes: item.notes || notes || "",
+      };
+    });
+
+    const insertedStocks = await Stock.insertMany(stockDocuments);
+
+    const challanItems = items.map((item, index) => {
+      const rate = item.rate || designMap[item.designId.toString()]?.rate || 0;
+      totalQty += item.qty;
+      totalAmount += item.qty * rate;
+      return {
+        stockId: insertedStocks[index]._id,
+        designId: item.designId,
+        qty: item.qty,
+        rate: rate,
+      };
+    });
+
+    const newChallan = new Challan({
+      challanNumber,
+      partyId: partyId || null,
+      tempPartyName: tempPartyName || "",
+      firmId: firmId || null,
+      items: challanItems,
+      totalQty,
+      totalAmount,
+      deliveryDate: deliveryDate || Date.now(),
+      status: "Delivered",
+      notes: notes || "",
+    });
+
+    const savedChallan = await newChallan.save();
+    res.status(201).json(savedChallan);
+  } catch (error) {
+    console.error("Error creating direct challan:", error);
+    res.status(500).json({
+      message: "Server error creating direct challan",
+      error: error.message,
+    });
+  }
+};
+
 exports.updateChallan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { partyId, firmId, deliveryDate, items } = req.body;
+    const { partyId, firmId, deliveryDate, items, notes } = req.body;
 
     const challan = await Challan.findOne({ _id: id });
     if (!challan) return res.status(404).json({ message: "Challan not found" });
@@ -158,6 +251,7 @@ exports.updateChallan = async (req, res) => {
     challan.items = items;
     challan.totalQty = totalQty;
     challan.totalAmount = totalAmount;
+    if (notes !== undefined) challan.notes = notes;
 
     const updatedChallan = await challan.save();
     res.status(200).json(updatedChallan);
@@ -191,15 +285,35 @@ exports.markChallanPrinted = async (req, res) => {
 
 exports.getNextChallanNumber = async (req, res) => {
   try {
-    const lastChallan = await Challan.findOne({}).sort({ createdAt: -1 });
-    let nextNum = 1;
-    if (lastChallan && lastChallan.challanNumber) {
-      const match = lastChallan.challanNumber.match(/\d+$/);
-      if (match) {
-        nextNum = parseInt(match[0], 10) + 1;
+    const challans = await Challan.find({}, "challanNumber");
+    let maxNum = 0;
+    let maxPrefix = "";
+    let maxNumStr = "";
+
+    challans.forEach((c) => {
+      if (c.challanNumber) {
+        const match = c.challanNumber.match(/(.*?)(\d+)$/);
+        if (match) {
+          const num = parseInt(match[2], 10);
+          if (num > maxNum) {
+            maxNum = num;
+            maxPrefix = match[1];
+            maxNumStr = match[2];
+          }
+        }
+      }
+    });
+
+    let nextChallanStr = "1";
+    if (maxNum > 0) {
+      const nextNum = maxNum + 1;
+      nextChallanStr = `${maxPrefix}${nextNum.toString().padStart(maxNumStr.length, "0")}`;
+    } else if (challans.length > 0) {
+      const lastChallan = await Challan.findOne({}).sort({ createdAt: -1 });
+      if (lastChallan && lastChallan.challanNumber) {
+        nextChallanStr = lastChallan.challanNumber + "-1";
       }
     }
-    const nextChallanStr = nextNum.toString();
     res.status(200).json({ nextChallanNumber: nextChallanStr });
   } catch (error) {
     res.status(500).json({
@@ -249,7 +363,9 @@ exports.deleteChallan = async (req, res) => {
     if (!challan) return res.status(404).json({ message: "Challan not found" });
 
     if (challan.status === "Billed") {
-      return res.status(400).json({ message: "Cannot delete a billed challan." });
+      return res
+        .status(400)
+        .json({ message: "Cannot delete a billed challan." });
     }
 
     // Restore old stock quantities first
@@ -264,6 +380,8 @@ exports.deleteChallan = async (req, res) => {
     res.status(200).json({ message: "Challan deleted successfully" });
   } catch (error) {
     console.error("Error deleting challan:", error);
-    res.status(500).json({ message: "Server error deleting challan", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Server error deleting challan", error: error.message });
   }
 };

@@ -166,9 +166,11 @@ export default function Dashboard() {
   const pendingChallan = filteredChallans.filter((c) => c.status !== "Billed");
   const billedChallan = filteredChallans.filter((c) => c.status === "Billed");
   const printedChallan = filteredChallans.filter((c) => c.status === "Printed");
+  const unassignedStock = filteredStocks.filter((s) => !s.firmId || !s.partyId);
 
   const pendingStockQty = pendingStock.reduce((acc, s) => acc + (s.qty || 0), 0);
   const deliveredStockQty = deliveredStock.reduce((acc, s) => acc + (s.qty || 0), 0);
+  const unassignedStockQty = unassignedStock.reduce((acc, s) => acc + (s.qty || 0), 0);
 
   const pendingStockValue = pendingStock.reduce(
     (acc, s) => acc + (s.qty || 0) * (s.rate || 0),
@@ -338,6 +340,27 @@ export default function Dashboard() {
       bg: "bg-emerald-50",
       iconColor: "text-emerald-600",
       border: "border-emerald-100",
+    },
+    {
+      title: "Unassigned Stock",
+      value: (
+        <div className="flex items-baseline gap-1.5">
+          <span>{unassignedStockQty}</span>
+          <span className="text-lg text-slate-500 font-medium">Qty</span>
+        </div>
+      ),
+      sub: (
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500 text-xs sm:text-sm">
+          <span className="font-semibold text-slate-700">{unassignedStock.length}</span> items
+          <span className="text-slate-300">&bull;</span>
+          needs setup
+        </span>
+      ),
+      icon: Layers,
+      gradient: "from-slate-400 to-gray-500",
+      bg: "bg-slate-50",
+      iconColor: "text-slate-600",
+      border: "border-slate-200",
     },
     {
       title: "Pending Challans",

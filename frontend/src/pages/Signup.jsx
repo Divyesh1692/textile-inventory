@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
 import { Lock, User, Mail, UserPlus } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -13,6 +14,7 @@ export default function Signup() {
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,10 +28,11 @@ export default function Signup() {
     try {
       await axios.post("/users/signup", form);
 
-      alert("Signup successful! Please login.");
-      window.location.href = "/login";
+      toast.success("Signup successful! Please login.");
+      navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Server error");
+      toast.error(err.response?.data?.message || "Server error");
       setIsLoading(false);
     }
   }

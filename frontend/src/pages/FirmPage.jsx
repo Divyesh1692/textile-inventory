@@ -3,6 +3,8 @@ import { PlusIcon } from "@heroicons/react/24/solid";
 import { Search, MoreVertical, Edit2, Trash2, Building2 } from "lucide-react";
 import DashboardLayout from "../layout/DashboardLayout";
 import axios from "./../utils/axios";
+import { toast } from "react-hot-toast";
+import { toastConfirm } from "../utils/toastConfirm";
 
 export default function FirmPage() {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -49,9 +51,10 @@ export default function FirmPage() {
       }
 
       await getFirm();
+      toast.success(editId ? "Firm updated successfully" : "Firm added successfully");
     } catch (error) {
       console.error("Error saving firm:", error);
-      alert("Something went wrong! Firm not saved.");
+      toast.error("Something went wrong! Firm not saved.");
     }
   };
 
@@ -65,14 +68,16 @@ export default function FirmPage() {
   };
 
   const handleDeleteFirm = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this firm?")) return;
-    try {
-      await axios.delete(`/firm/${id}`);
-      await getFirm();
-    } catch (error) {
-      console.error("Error deleting firm:", error);
-      alert("Failed to delete firm.");
-    }
+    toastConfirm("Are you sure you want to delete this firm?", async () => {
+      try {
+        await axios.delete(`/firm/${id}`);
+        toast.success("Firm deleted successfully");
+        await getFirm();
+      } catch (error) {
+        console.error("Error deleting firm:", error);
+        toast.error("Failed to delete firm.");
+      }
+    });
   };
 
   const handleOpenAdd = () => {

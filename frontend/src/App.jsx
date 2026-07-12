@@ -9,10 +9,12 @@ import StockPage from "./pages/StockPage";
 import ChallanPage from "./pages/ChallanPage";
 import BillingPage from "./pages/BillingPage";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="bottom-right" reverseOrder={false} />
       <PwaInstallPrompt />
       <Routes>
         <Route path="/" element={<Login />} />
