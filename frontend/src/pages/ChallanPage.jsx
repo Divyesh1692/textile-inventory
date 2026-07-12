@@ -1698,7 +1698,7 @@ export default function ChallanPage() {
                                   { value: "", label: "Select Design" },
                                   ...designs.map((d) => ({
                                     value: d._id,
-                                    label: d.name,
+                                    label: `${d.name} ${d.shortcode ? `(${d.shortcode})` : ""}`,
                                     rate: d.rate,
                                   })),
                                 ]}
@@ -1755,56 +1755,22 @@ export default function ChallanPage() {
                             />
                             {activeDropdownIndex === index && (
                               <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                                {stockList.filter(
-                                  (s) =>
-                                    s.designId?.name
-                                      ?.toLowerCase()
-                                      .includes(
-                                        (
-                                          item.stockSearchText || ""
-                                        ).toLowerCase(),
-                                      ) ||
-                                    s.challanNo
-                                      ?.toLowerCase()
-                                      .includes(
-                                        (
-                                          item.stockSearchText || ""
-                                        ).toLowerCase(),
-                                      ) ||
-                                    s.chartNo
-                                      ?.toLowerCase()
-                                      .includes(
-                                        (
-                                          item.stockSearchText || ""
-                                        ).toLowerCase(),
-                                      ),
-                                ).length > 0 ? (
-                                  stockList
-                                    .filter(
-                                      (s) =>
-                                        s.designId?.name
-                                          ?.toLowerCase()
-                                          .includes(
-                                            (
-                                              item.stockSearchText || ""
-                                            ).toLowerCase(),
-                                          ) ||
-                                        s.challanNo
-                                          ?.toLowerCase()
-                                          .includes(
-                                            (
-                                              item.stockSearchText || ""
-                                            ).toLowerCase(),
-                                          ) ||
-                                        s.chartNo
-                                          ?.toLowerCase()
-                                          .includes(
-                                            (
-                                              item.stockSearchText || ""
-                                            ).toLowerCase(),
-                                          ),
-                                    )
-                                    .map((s) => (
+                                {(() => {
+                                  const filteredStocks = stockList.filter((s) => {
+                                    // Exclude stocks already selected in other rows
+                                    if (items.some((itm, i) => i !== index && itm.stockId === s._id)) return false;
+
+                                    const term = (item.stockSearchText || "").toLowerCase();
+                                    return (
+                                      s.designId?.name?.toLowerCase().includes(term) ||
+                                      s.designId?.shortcode?.toLowerCase().includes(term) ||
+                                      s.challanNo?.toLowerCase().includes(term) ||
+                                      s.chartNo?.toLowerCase().includes(term)
+                                    );
+                                  });
+
+                                  return filteredStocks.length > 0 ? (
+                                    filteredStocks.map((s) => (
                                       <div
                                         key={s._id}
                                         onMouseDown={(e) => {
@@ -1815,7 +1781,7 @@ export default function ChallanPage() {
                                       >
                                         <div className="flex justify-between items-center">
                                           <span className="font-semibold text-slate-900">
-                                            {s.designId?.name}
+                                            {s.designId?.name} {s.designId?.shortcode ? `(${s.designId.shortcode})` : ""}
                                           </span>
                                           <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-0.5 rounded-full">
                                             {s.qty} available
@@ -1828,11 +1794,12 @@ export default function ChallanPage() {
                                         </div>
                                       </div>
                                     ))
-                                ) : (
-                                  <div className="px-4 py-3 text-sm text-slate-500 text-center">
-                                    No matching stock found.
-                                  </div>
-                                )}
+                                  ) : (
+                                    <div className="px-4 py-3 text-sm text-slate-500 text-center">
+                                      No matching stock found.
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>

@@ -55,28 +55,46 @@ export default function GenerateChallanModal({
 
     setIsSubmitting(true);
     try {
-      const items = selectedStocks.map((stock) => ({
-        stockId: stock._id,
-        designId: stock.designId?._id || stock.designId,
-        qty: Number(stock.qty),
-        rate: Number(stock.rate || 0),
-      }));
+      let currentChallanStr = challanNumber;
 
-      const payload = {
-        challanNumber,
-        firmId,
-        partyId,
-        deliveryDate,
-        notes,
-        items,
-      };
+      for (const stock of selectedStocks) {
+        const items = [
+          {
+            stockId: stock._id,
+            designId: stock.designId?._id || stock.designId,
+            qty: Number(stock.qty),
+            rate: Number(stock.rate || 0),
+          },
+        ];
 
-      await axios.post("/challan/add", payload);
-      toast.success("Challan generated successfully");
+        const payload = {
+          challanNumber: currentChallanStr,
+          firmId,
+          partyId,
+          deliveryDate,
+          notes,
+          items,
+        };
+
+        await axios.post("/challan/add", payload);
+
+        // Increment for next iteration
+        const match = currentChallanStr.match(/(.*?)(\d+)$/);
+        if (match) {
+          const prefix = match[1];
+          const numStr = match[2];
+          const nextNum = parseInt(numStr, 10) + 1;
+          currentChallanStr = `${prefix}${nextNum.toString().padStart(numStr.length, "0")}`;
+        } else {
+          currentChallanStr = `${currentChallanStr}-1`;
+        }
+      }
+
+      toast.success(`Generated ${selectedStocks.length} challan(s) successfully`);
       onSuccess();
     } catch (error) {
       console.error("Error generating challan:", error);
-      toast.error(error.response?.data?.message || "Failed to generate challan");
+      toast.error(error.response?.data?.message || "Failed to generate challan(s)");
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +113,7 @@ export default function GenerateChallanModal({
               Generate Challan
             </h3>
             <p className="text-sm text-slate-500 mt-0.5">
-              Creating 1 challan for {selectedStocks.length} items
+              Creating {selectedStocks.length} separate challan(s) starting from the number below
             </p>
           </div>
           <button
@@ -111,7 +129,7 @@ export default function GenerateChallanModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase">
-                  Challan No *
+                  Starting Challan No *
                 </label>
                 <input
                   type="text"

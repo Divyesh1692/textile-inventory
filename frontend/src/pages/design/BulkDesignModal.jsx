@@ -64,7 +64,7 @@ export default function BulkDesignModal({ onClose, onSuccess }) {
         });
       });
 
-      await axios.post("/design/bulk", formData, {
+      await axios.post("/design/add-bulk", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
